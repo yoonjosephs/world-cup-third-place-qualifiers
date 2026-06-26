@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2026-06-26T03:13:00.743Z",
+  "lastUpdated": "2026-06-26T04:11:14.392Z",
   "source": "football-data.org",
   "teams": [
     {
@@ -117,7 +117,7 @@
       "gd": 0,
       "gf": 2,
       "played": 3,
-      "live": true
+      "live": false
     },
     {
       "name": "Paraguay",
@@ -126,25 +126,25 @@
       "gd": -2,
       "gf": 2,
       "played": 3,
-      "live": true
+      "live": false
     },
     {
       "name": "Türkiye",
       "group": "D",
-      "pts": 3,
-      "gd": -2,
+      "pts": 1,
+      "gd": -3,
       "gf": 2,
       "played": 3,
-      "live": true
+      "live": false
     },
     {
       "name": "USA",
       "group": "D",
-      "pts": 6,
-      "gd": 4,
-      "gf": 7,
+      "pts": 7,
+      "gd": 5,
+      "gf": 8,
       "played": 3,
-      "live": true
+      "live": false
     },
     {
       "name": "Curaçao",
