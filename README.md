@@ -203,11 +203,12 @@ live" below). The pipeline:
    and why.)
 5. If everything checks out and the standings actually changed, it writes
    `data/standings.json` (`{lastUpdated, source, teams: [{name, group,
-   pts, gd, gf, played}, ...]}`) and the workflow commits it directly to
-   `main`.
+   pts, gd, gf, played, live}, ...]}`) and the workflow commits it
+   directly to `main`. `live` (see "In-progress matches" below) flags a
+   team currently mid-match.
 6. **`js/app.js`** fetches `data/standings.json` at page load
-   (`loadLiveStandings()`), overlays `pts`/`gd`/`gf`/`played` onto the
-   `TEAMS_RAW` baseline by name, and records `lastUpdated`/`source` for
+   (`loadLiveStandings()`), overlays `pts`/`gd`/`gf`/`played`/`live` onto
+   the `TEAMS_RAW` baseline by name, and records `lastUpdated`/`source` for
    the "Data note" banner. Any failure — network error, 404, malformed
    JSON, or opening `index.html` straight from disk (`file://` blocks
    relative `fetch()` in most browsers) — is caught, and the page
@@ -227,6 +228,40 @@ live" below). The pipeline:
   5 tiebreakers (only matters on an exact points/GD/GF tie) and the group
   stage locks in a couple of days, that wasn't worth automating. Edit it
   by hand in `js/data.js` if a real tie at that level shows up.
+
+### In-progress matches
+
+football-data.org's standings endpoint folds an in-progress match's
+*current* score into `points`/`goalsFor`/`goalDifference` — and counts it
+in `playedGames` — before the match is actually final. Left unhandled,
+that means a team mid-match can look like its group has finished
+(`playedGames === 3`) when it hasn't, which would have let the clinch/
+eliminate math (and the "X/3 PLD" display) treat a score that can still
+change as if it were permanent.
+
+`scripts/import-standings.mjs` also fetches
+`GET /v4/competitions/WC/matches?status=LIVE` (football-data.org's filter
+for `IN_PLAY`/`PAUSED`) and tags every team currently in one of those
+matches with `live: true` in `data/standings.json`. `js/app.js` then:
+
+- Treats that team's in-progress match as **not yet played** — their
+  displayed `played` count is the API's `playedGames` minus one, not the
+  raw value — so the UI never claims a group is finished while a match
+  in it is still going.
+- Excludes a live team from the "already decided" tiebreak comparison in
+  `couldStillOutrank()` — it's evaluated by its points ceiling like any
+  other unfinished team, never treated as frozen.
+- **Never marks a live team itself `clinched` or `eliminated`**,
+  regardless of what the rest of the math says — explicitly forced at the
+  end of `computeThirdPlaceCertainty()`. A team's own current points can
+  still go *down* as well as up before full time (a provisional lead can
+  end in a draw or a loss), so even a team that currently looks safely
+  inside or hopelessly outside the top 8 isn't either of those for
+  certain until its match is over.
+
+A "LIVE" badge (pulsing, respects `prefers-reduced-motion`) shows next to
+that team's played count in both the Third-Place table and the Groups
+editor.
 
 ### Re-running or adjusting the importer
 

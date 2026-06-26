@@ -1,7 +1,7 @@
 const STORAGE_KEY = "bestThirds2026:editedTeams";
 const STANDINGS_URL = "data/standings.json";
 
-let teams = TEAMS_RAW.map(t=>({name:t[0],group:t[1],pts:t[2],gd:t[3],gf:t[4],conduct:t[5],fifa:t[6],played:t[7]}));
+let teams = TEAMS_RAW.map(t=>({name:t[0],group:t[1],pts:t[2],gd:t[3],gf:t[4],conduct:t[5],fifa:t[6],played:t[7],live:false}));
 let SNAPSHOT = JSON.parse(JSON.stringify(teams));
 
 // liveStatus describes where the *current* numbers (before any local edits)
@@ -17,6 +17,15 @@ let usingSavedEdits = false;
 // Falls back to the pure TEAMS_RAW snapshot on any failure: bad network,
 // 404, malformed JSON, or opening this file directly from disk (file://
 // fetches of relative JSON are blocked in most browsers).
+//
+// `live` (set by the importer from football-data.org's match statuses)
+// flags a team currently mid-match. football-data.org's standings already
+// fold an in-progress match's provisional score into points/GD/GF/played
+// *before* the match is final, so a team can look "finished" when it
+// isn't. We treat that in-progress game as not-yet-played here — both so
+// the displayed "played" count is honest and so the certainty math in
+// computeThirdPlaceCertainty() doesn't mistake a live, still-changeable
+// line for a locked-in one. See README "In-progress matches".
 async function loadLiveStandings(){
   try{
     const res = await fetch(STANDINGS_URL, {cache:'no-store'});
@@ -30,7 +39,10 @@ async function loadLiveStandings(){
       if(!live) return;
       if(!Number.isInteger(live.pts) || !Number.isInteger(live.gd) || !Number.isInteger(live.gf)) return;
       t.pts = live.pts; t.gd = live.gd; t.gf = live.gf;
-      if(Number.isInteger(live.played) && live.played>=0 && live.played<=GROUP_STAGE_GAMES) t.played = live.played;
+      t.live = live.live === true;
+      if(Number.isInteger(live.played) && live.played>=0 && live.played<=GROUP_STAGE_GAMES){
+        t.played = t.live ? Math.max(0, live.played-1) : live.played;
+      }
     });
     liveStatus = { ok:true, lastUpdated:data.lastUpdated, source:data.source||'live feed', version:data.lastUpdated };
     SNAPSHOT = JSON.parse(JSON.stringify(teams));
@@ -108,7 +120,7 @@ function thirdPlaceTable(){
 // tie is decided forever, not a future possibility, so it doesn't count
 // against clinching.
 function couldStillOutrank(challenger, target){
-  if(challenger.played < GROUP_STAGE_GAMES){
+  if(challenger.played < GROUP_STAGE_GAMES || challenger.live){
     const theirMaxPts = challenger.pts + (GROUP_STAGE_GAMES - challenger.played)*3;
     return theirMaxPts >= target.pts;
   }
@@ -124,6 +136,11 @@ function computeThirdPlaceCertainty(thirds){
     t.clinched = stillThreats <= 7;
     t.eliminated = alreadyAhead >= 8;
   });
+  // A team mid-match is itself a moving target — their current points can
+  // still go up *or down* before full time (a provisional lead can turn
+  // into a draw or a loss). Never call them clinched or eliminated while
+  // their own match is live, regardless of what the math above says.
+  thirds.forEach(t=>{ if(t.live){ t.clinched=false; t.eliminated=false; } });
 }
 
 function winnerOf(g){return byGroup(g).find(t=>t.pos===1);}
@@ -192,10 +209,11 @@ function renderThirdTable(thirds){
     const certaintyWord = label==='CLINCHED' ? 'mathematically clinched a qualifying spot'
       : label==='ELIMINATED' ? 'mathematically eliminated from qualifying'
       : t.qualified ? 'currently in a qualifying spot, not yet clinched' : 'currently outside the qualifying spots, not yet eliminated';
-    const a11yLabel = `${t.name}, Group ${t.group}. ${t.pts} points, goal difference ${fmtGD(t.gd)}, ${t.gf} goals scored, fair-play score ${fmtConduct(t.conduct)}, ${t.played} of ${GROUP_STAGE_GAMES} group games played. Rank ${i+1} of 12 third-place teams, ${certaintyWord}.`;
+    const liveNote = t.live ? ' Currently playing a match right now, so this is provisional even beyond the usual caveats.' : '';
+    const a11yLabel = `${t.name}, Group ${t.group}. ${t.pts} points, goal difference ${fmtGD(t.gd)}, ${t.gf} goals scored, fair-play score ${fmtConduct(t.conduct)}, ${t.played} of ${GROUP_STAGE_GAMES} group games played. Rank ${i+1} of 12 third-place teams, ${certaintyWord}.${liveNote}`;
     html += `<button type="button" class="tp-row ${t.qualified?'q':'o'}" data-team="${t.name}" aria-label="${a11yLabel}">
       <span class="tp-rank" aria-hidden="true">${i+1}</span>
-      <span class="tp-team" aria-hidden="true"><span class="tp-name">${t.name}</span><span class="tp-group">GROUP ${t.group} · ${t.played}/${GROUP_STAGE_GAMES} PLD</span></span>
+      <span class="tp-team" aria-hidden="true"><span class="tp-name">${t.name}</span><span class="tp-group">GROUP ${t.group} · ${t.played}/${GROUP_STAGE_GAMES} PLD${t.live?' · <span class="live-dot">LIVE</span>':''}</span></span>
       <span class="tp-stat" aria-hidden="true">${t.pts}</span>
       <span class="tp-stat" aria-hidden="true">${fmtGD(t.gd)}</span>
       <span class="tp-stat" aria-hidden="true">${t.gf}</span>
@@ -225,7 +243,7 @@ function renderGroups(){
     list.forEach(t=>{
       html += `<div class="gteam">
         <span class="dot p${t.pos}" aria-hidden="true"></span>
-        <span class="nm">${t.name}</span>
+        <span class="nm">${t.name}${t.live?' <span class="live-dot" aria-label="playing right now">LIVE</span>':''}</span>
         <input type="number" inputmode="numeric" data-name="${t.name}" data-field="pts" value="${t.pts}" aria-label="${t.name} points">
         <input type="number" inputmode="numeric" data-name="${t.name}" data-field="gd" value="${t.gd}" aria-label="${t.name} goal difference">
         <input type="number" inputmode="numeric" data-name="${t.name}" data-field="gf" value="${t.gf}" aria-label="${t.name} goals scored">
@@ -313,12 +331,16 @@ function buildScenarioText(name){
       }
     }
     const posWord = t.pos===1?'won Group '+g:'finished runner-up in Group '+g;
-    const groupDoneNote = t.played>=GROUP_STAGE_GAMES ? ` Group ${g} has finished all ${GROUP_STAGE_GAMES} games, so this is locked in.` : ` Group ${g} still has games left (${t.name} has played ${t.played} of ${GROUP_STAGE_GAMES}), so this could still change.`;
+    const groupDoneNote = t.live ? ` ${t.name} is playing right now — this is provisional until that match finishes.`
+      : t.played>=GROUP_STAGE_GAMES ? ` Group ${g} has finished all ${GROUP_STAGE_GAMES} games, so this is locked in.`
+      : ` Group ${g} still has games left (${t.name} has played ${t.played} of ${GROUP_STAGE_GAMES}), so this could still change.`;
     return `<div class="scenario-head"><span class="badge safe">Through</span><b>${t.name}</b></div>
       ${t.name} has ${posWord} and is into the Round of 32. They play <b>${oppHtml||'TBD'}</b> on ${dateVenue||'a date to be confirmed'}.${groupDoneNote}`;
   }
   if(t.pos===4){
-    const groupDoneNote = t.played>=GROUP_STAGE_GAMES ? ` Group ${g} has finished all ${GROUP_STAGE_GAMES} games, so this is final.` : ` ${t.name} has played ${t.played} of ${GROUP_STAGE_GAMES} group games — this is provisional until Group ${g} finishes.`;
+    const groupDoneNote = t.live ? ` ${t.name} is playing right now — this is provisional until that match finishes.`
+      : t.played>=GROUP_STAGE_GAMES ? ` Group ${g} has finished all ${GROUP_STAGE_GAMES} games, so this is final.`
+      : ` ${t.name} has played ${t.played} of ${GROUP_STAGE_GAMES} group games — this is provisional until Group ${g} finishes.`;
     return `<div class="scenario-head"><span class="badge out">Eliminated</span><b>${t.name}</b></div>
       ${t.name} finished fourth in Group ${g} on the current numbers and cannot reach the Round of 32 from there.${groupDoneNote}`;
   }
@@ -351,7 +373,9 @@ function buildScenarioText(name){
     : mine.qualified ? '<span class="badge safe">In a qualifying spot</span>' : '<span class="badge bubble">On the bubble</span>';
   const playedText = `${t.name} has played ${mine.played} of ${GROUP_STAGE_GAMES} group games`;
   let certaintyText = '';
-  if(label==='CLINCHED'){
+  if(mine.live){
+    certaintyText = ` ${t.name} is playing right now, so even their current points/GD/GF could still change before full time — they can't be called clinched or eliminated mid-match.`;
+  } else if(label==='CLINCHED'){
     certaintyText = ` Even if every other team behind them in the third-place race wins all of its remaining games, at most 7 of them could reach ${mine.pts} points — so ${t.name} can't be pushed below 8th by points alone. Their spot is mathematically clinched.`;
   } else if(label==='ELIMINATED'){
     certaintyText = ` Even with a maximum run of wins in their remaining games (best case: ${mine.maxPts} points), at least 8 other third-placed teams already have more points than that — so ${t.name} can no longer reach the top 8. They're mathematically eliminated from best-thirds qualification.`;

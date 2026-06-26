@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2026-06-26T02:20:01.826Z",
+  "lastUpdated": "2026-06-26T03:13:00.743Z",
   "source": "football-data.org",
   "teams": [
     {
@@ -8,7 +8,8 @@
       "pts": 1,
       "gd": -4,
       "gf": 2,
-      "played": 3
+      "played": 3,
+      "live": false
     },
     {
       "name": "Mexico",
@@ -16,7 +17,8 @@
       "pts": 9,
       "gd": 6,
       "gf": 6,
-      "played": 3
+      "played": 3,
+      "live": false
     },
     {
       "name": "South Africa",
@@ -24,7 +26,8 @@
       "pts": 4,
       "gd": -1,
       "gf": 2,
-      "played": 3
+      "played": 3,
+      "live": false
     },
     {
       "name": "South Korea",
@@ -32,7 +35,8 @@
       "pts": 3,
       "gd": -1,
       "gf": 2,
-      "played": 3
+      "played": 3,
+      "live": false
     },
     {
       "name": "Bosnia and Herzegovina",
@@ -40,7 +44,8 @@
       "pts": 4,
       "gd": -1,
       "gf": 5,
-      "played": 3
+      "played": 3,
+      "live": false
     },
     {
       "name": "Canada",
@@ -48,7 +53,8 @@
       "pts": 4,
       "gd": 5,
       "gf": 8,
-      "played": 3
+      "played": 3,
+      "live": false
     },
     {
       "name": "Qatar",
@@ -56,7 +62,8 @@
       "pts": 1,
       "gd": -8,
       "gf": 2,
-      "played": 3
+      "played": 3,
+      "live": false
     },
     {
       "name": "Switzerland",
@@ -64,7 +71,8 @@
       "pts": 7,
       "gd": 4,
       "gf": 7,
-      "played": 3
+      "played": 3,
+      "live": false
     },
     {
       "name": "Brazil",
@@ -72,7 +80,8 @@
       "pts": 7,
       "gd": 6,
       "gf": 7,
-      "played": 3
+      "played": 3,
+      "live": false
     },
     {
       "name": "Haiti",
@@ -80,7 +89,8 @@
       "pts": 0,
       "gd": -6,
       "gf": 2,
-      "played": 3
+      "played": 3,
+      "live": false
     },
     {
       "name": "Morocco",
@@ -88,7 +98,8 @@
       "pts": 7,
       "gd": 3,
       "gf": 6,
-      "played": 3
+      "played": 3,
+      "live": false
     },
     {
       "name": "Scotland",
@@ -96,7 +107,8 @@
       "pts": 3,
       "gd": -3,
       "gf": 1,
-      "played": 3
+      "played": 3,
+      "live": false
     },
     {
       "name": "Australia",
@@ -104,7 +116,8 @@
       "pts": 4,
       "gd": 0,
       "gf": 2,
-      "played": 3
+      "played": 3,
+      "live": true
     },
     {
       "name": "Paraguay",
@@ -112,23 +125,26 @@
       "pts": 4,
       "gd": -2,
       "gf": 2,
-      "played": 3
+      "played": 3,
+      "live": true
     },
     {
       "name": "Türkiye",
       "group": "D",
-      "pts": 1,
-      "gd": -3,
-      "gf": 0,
-      "played": 3
+      "pts": 3,
+      "gd": -2,
+      "gf": 2,
+      "played": 3,
+      "live": true
     },
     {
       "name": "USA",
       "group": "D",
-      "pts": 7,
-      "gd": 5,
-      "gf": 6,
-      "played": 3
+      "pts": 6,
+      "gd": 4,
+      "gf": 7,
+      "played": 3,
+      "live": true
     },
     {
       "name": "Curaçao",
@@ -136,7 +152,8 @@
       "pts": 1,
       "gd": -8,
       "gf": 1,
-      "played": 3
+      "played": 3,
+      "live": false
     },
     {
       "name": "Ecuador",
@@ -144,7 +161,8 @@
       "pts": 4,
       "gd": 0,
       "gf": 2,
-      "played": 3
+      "played": 3,
+      "live": false
     },
     {
       "name": "Germany",
@@ -152,7 +170,8 @@
       "pts": 6,
       "gd": 6,
       "gf": 10,
-      "played": 3
+      "played": 3,
+      "live": false
     },
     {
       "name": "Ivory Coast",
@@ -160,7 +179,8 @@
       "pts": 6,
       "gd": 2,
       "gf": 4,
-      "played": 3
+      "played": 3,
+      "live": false
     },
     {
       "name": "Japan",
@@ -168,7 +188,8 @@
       "pts": 5,
       "gd": 4,
       "gf": 7,
-      "played": 3
+      "played": 3,
+      "live": false
     },
     {
       "name": "Netherlands",
@@ -176,7 +197,8 @@
       "pts": 7,
       "gd": 6,
       "gf": 10,
-      "played": 3
+      "played": 3,
+      "live": false
     },
     {
       "name": "Sweden",
@@ -184,7 +206,8 @@
       "pts": 4,
       "gd": 0,
       "gf": 7,
-      "played": 3
+      "played": 3,
+      "live": false
     },
     {
       "name": "Tunisia",
@@ -192,7 +215,8 @@
       "pts": 0,
       "gd": -10,
       "gf": 2,
-      "played": 3
+      "played": 3,
+      "live": false
     },
     {
       "name": "Belgium",
@@ -200,7 +224,8 @@
       "pts": 2,
       "gd": 0,
       "gf": 1,
-      "played": 2
+      "played": 2,
+      "live": false
     },
     {
       "name": "Egypt",
@@ -208,7 +233,8 @@
       "pts": 4,
       "gd": 2,
       "gf": 4,
-      "played": 2
+      "played": 2,
+      "live": false
     },
     {
       "name": "Iran",
@@ -216,7 +242,8 @@
       "pts": 2,
       "gd": 0,
       "gf": 2,
-      "played": 2
+      "played": 2,
+      "live": false
     },
     {
       "name": "New Zealand",
@@ -224,7 +251,8 @@
       "pts": 1,
       "gd": -2,
       "gf": 3,
-      "played": 2
+      "played": 2,
+      "live": false
     },
     {
       "name": "Cape Verde",
@@ -232,7 +260,8 @@
       "pts": 2,
       "gd": 0,
       "gf": 2,
-      "played": 2
+      "played": 2,
+      "live": false
     },
     {
       "name": "Saudi Arabia",
@@ -240,7 +269,8 @@
       "pts": 1,
       "gd": -4,
       "gf": 1,
-      "played": 2
+      "played": 2,
+      "live": false
     },
     {
       "name": "Spain",
@@ -248,7 +278,8 @@
       "pts": 4,
       "gd": 4,
       "gf": 4,
-      "played": 2
+      "played": 2,
+      "live": false
     },
     {
       "name": "Uruguay",
@@ -256,7 +287,8 @@
       "pts": 2,
       "gd": 0,
       "gf": 3,
-      "played": 2
+      "played": 2,
+      "live": false
     },
     {
       "name": "France",
@@ -264,7 +296,8 @@
       "pts": 6,
       "gd": 5,
       "gf": 6,
-      "played": 2
+      "played": 2,
+      "live": false
     },
     {
       "name": "Iraq",
@@ -272,7 +305,8 @@
       "pts": 0,
       "gd": -6,
       "gf": 1,
-      "played": 2
+      "played": 2,
+      "live": false
     },
     {
       "name": "Norway",
@@ -280,7 +314,8 @@
       "pts": 6,
       "gd": 4,
       "gf": 7,
-      "played": 2
+      "played": 2,
+      "live": false
     },
     {
       "name": "Senegal",
@@ -288,7 +323,8 @@
       "pts": 0,
       "gd": -3,
       "gf": 3,
-      "played": 2
+      "played": 2,
+      "live": false
     },
     {
       "name": "Algeria",
@@ -296,7 +332,8 @@
       "pts": 3,
       "gd": -2,
       "gf": 2,
-      "played": 2
+      "played": 2,
+      "live": false
     },
     {
       "name": "Argentina",
@@ -304,7 +341,8 @@
       "pts": 6,
       "gd": 5,
       "gf": 5,
-      "played": 2
+      "played": 2,
+      "live": false
     },
     {
       "name": "Austria",
@@ -312,7 +350,8 @@
       "pts": 3,
       "gd": 0,
       "gf": 3,
-      "played": 2
+      "played": 2,
+      "live": false
     },
     {
       "name": "Jordan",
@@ -320,7 +359,8 @@
       "pts": 0,
       "gd": -3,
       "gf": 2,
-      "played": 2
+      "played": 2,
+      "live": false
     },
     {
       "name": "Colombia",
@@ -328,7 +368,8 @@
       "pts": 6,
       "gd": 3,
       "gf": 4,
-      "played": 2
+      "played": 2,
+      "live": false
     },
     {
       "name": "DR Congo",
@@ -336,7 +377,8 @@
       "pts": 1,
       "gd": -1,
       "gf": 1,
-      "played": 2
+      "played": 2,
+      "live": false
     },
     {
       "name": "Portugal",
@@ -344,7 +386,8 @@
       "pts": 4,
       "gd": 5,
       "gf": 6,
-      "played": 2
+      "played": 2,
+      "live": false
     },
     {
       "name": "Uzbekistan",
@@ -352,7 +395,8 @@
       "pts": 0,
       "gd": -7,
       "gf": 1,
-      "played": 2
+      "played": 2,
+      "live": false
     },
     {
       "name": "Croatia",
@@ -360,7 +404,8 @@
       "pts": 3,
       "gd": -1,
       "gf": 3,
-      "played": 2
+      "played": 2,
+      "live": false
     },
     {
       "name": "England",
@@ -368,7 +413,8 @@
       "pts": 4,
       "gd": 2,
       "gf": 4,
-      "played": 2
+      "played": 2,
+      "live": false
     },
     {
       "name": "Ghana",
@@ -376,7 +422,8 @@
       "pts": 4,
       "gd": 1,
       "gf": 1,
-      "played": 2
+      "played": 2,
+      "live": false
     },
     {
       "name": "Panama",
@@ -384,7 +431,8 @@
       "pts": 0,
       "gd": -2,
       "gf": 0,
-      "played": 2
+      "played": 2,
+      "live": false
     }
   ]
 }
