@@ -2,11 +2,16 @@ name: Update World Cup standings
 
 on:
   schedule:
-    # Every 20 minutes. Group stage runs through 2026-06-27; this workflow
-    # is cheap to leave running after that too (it no-ops once standings
-    # stop changing — see "no change" branch in scripts/import-standings.mjs),
-    # but feel free to delete/disable this schedule once the bracket locks.
-    - cron: "*/20 * * * *"
+    # Every 5 minutes — the fastest GitHub Actions' own scheduler reliably
+    # supports (anything tighter, including "every minute", silently
+    # collapses to this same 5-minute floor, and even this can slip by
+    # several minutes during platform-wide peak load). Still only ~288
+    # calls/day, nowhere near football-data.org's 10-requests/minute cap.
+    # Group stage runs through 2026-06-27; this workflow is cheap to leave
+    # running after that too (it no-ops once standings stop changing — see
+    # the "no change" branch in scripts/import-standings.mjs), but feel
+    # free to delete/disable this schedule once the bracket locks.
+    - cron: "*/5 * * * *"
   workflow_dispatch: {}
 
 permissions:
