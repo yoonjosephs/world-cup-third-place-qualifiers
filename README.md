@@ -67,27 +67,40 @@ below).
 
 Beyond the current top-8 cut (`qualified`), each third-place team also
 gets a `clinched`/`eliminated` flag from `computeThirdPlaceCertainty()`
-in `js/app.js`, based purely on points (the primary tiebreaker) and
-`gamesPlayed`:
+in `js/app.js`:
 
 - **`maxPts`** = current points + 3 × remaining games — the most points a
-  team could possibly finish group play with.
-- **`clinched`**: true if 7 or fewer of the other 11 thirds could ever
-  reach or exceed this team's *current* points. If at most 7 others can
-  ever catch up, this team can't be pushed below 8th by points alone,
-  no matter how the rest of the group stage goes.
-- **`eliminated`**: true if 8 or more of the other thirds *already* have
-  more points than this team's `maxPts` — i.e. even a perfect run through
-  the remaining games can't get them into the top 8 by points alone.
+  team could possibly finish group play with. Used only for `eliminated`:
+  a team is eliminated if 8+ of the other thirds *already* have more
+  points than this team's `maxPts` — i.e. even a perfect run through the
+  remaining games can't get them into the top 8 on points alone. This is
+  points-only on purpose: a trailing team's eventual GD/goals/fair-play/
+  FIFA rank can't be bounded the way a 3-points-per-win ceiling can (a
+  team could theoretically win 12–0).
+- **`clinched`**: true if at most 7 of the other thirds could still end up
+  ranked at or above this team — via `couldStillOutrank()`. A challenger
+  only counts as a real threat if:
+  - it **hasn't finished its group yet** (bounded only by its points
+    ceiling, since its final GD/goals/etc. aren't locked), or
+  - it **has finished**, but running the actual FIFA tiebreak chain — the
+    same `sortKey()` used for every other ranking in this app — against
+    this team's current line still puts it at or above this team.
 
-This intentionally ignores goal difference/goals scored/fair-play/FIFA
-ranking when bounding a trailing team's ceiling, since — unlike points
-capped at 3-per-win — those can't be bounded the same way (a team could
-theoretically win 12–0). So it only ever calls a team clinched or
-eliminated when points alone make the outcome unavoidable; everything
-else is shown as a provisional **IN**/**OUT** that "could still move
-either way." The Third-Place Race table and the per-team scenario text
-both reflect this: **CLINCHED**/**ELIMINATED** vs. plain **IN**/**OUT**.
+  The second branch matters: two teams tied on points with their groups
+  both finished isn't a future possibility, it's a *permanent, decided*
+  ranking — goal difference (then goals scored, then fair-play, then FIFA
+  rank) already broke that tie for good. A finished team that's already
+  lost that tiebreak doesn't count against clinching just because the
+  points number matches. (Example: Sweden, Ecuador, and Bosnia and
+  Herzegovina were tied on 4 points with their groups all finished —
+  Sweden led on goals scored, Bosnia trailed on goal difference. That tie
+  is over; it doesn't keep any of them from clinching just because the
+  points column matches.)
+
+Everything that isn't conclusively clinched or eliminated shows as a
+provisional **IN**/**OUT** that "could still move either way." The
+Third-Place Race table and the per-team scenario text both reflect this:
+**CLINCHED**/**ELIMINATED** vs. plain **IN**/**OUT**.
 
 ### `TABLE_COMPACT` (FIFA Annex C lookup table)
 

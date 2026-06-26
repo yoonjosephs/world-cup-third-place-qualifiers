@@ -83,33 +83,45 @@ function thirdPlaceTable(){
   thirds.forEach((t,i)=>{t.rank=i+1; t.qualified = i<8;});
   return thirds;
 }
-// Mathematical certainty for the third-place race, based on points only
-// (the primary tiebreaker). For each third-place team, maxPts is the most
-// points they could possibly finish with — their current points plus a
-// win in every game they haven't played yet.
-//
-// clinched: true if at most 7 of the other 11 thirds could ever reach or
-// exceed this team's *current* points — meaning at least this team can't
-// be pushed below 8th by points alone, no matter how the rest of the
-// group stage plays out.
+// Mathematical certainty for the third-place race. For each third-place
+// team, maxPts is the most points they could possibly finish with — their
+// current points plus a win in every game they haven't played yet.
 //
 // eliminated: true if 8 or more of the other thirds already have *more*
 // points than this team's maxPts — meaning even a perfect run through
 // their remaining games can't get them into the top 8 by points alone.
+// (Points-only is deliberate: a trailing team's eventual GD/goals/fair-play/
+// FIFA rank can't be bounded the way a 3-points-per-win ceiling can — a
+// team could theoretically win 12–0 — so this only fires when points alone
+// make the outcome unavoidable.)
 //
-// This deliberately ignores goal difference/goals scored/fair-play/FIFA
-// ranking when judging the maximum a trailing team could reach, since
-// those can't be bounded the same way a 3-points-per-win ceiling can —
-// so it only ever calls "clinched"/"eliminated" when points alone make
-// the outcome unavoidable, and leaves everything else as "still alive".
+// clinched: true if at most 7 of the other thirds can still end up ranked
+// at or above this team. A challenger only counts as "still a threat" if:
+//   - it hasn't finished its group yet (its final GD/goals/etc. aren't
+//     locked, so we can't rule out it catching up — bounded only by its
+//     points ceiling), or
+//   - it HAS finished, but applying the real FIFA tiebreak chain (the same
+//     sortKey used everywhere else) to its now-permanent stats against this
+//     team's current line still puts it at or above this team.
+// A finished team that's already been conclusively out-tiebreaked (e.g.
+// tied on points but behind on goal difference) is *not* a threat — that
+// tie is decided forever, not a future possibility, so it doesn't count
+// against clinching.
+function couldStillOutrank(challenger, target){
+  if(challenger.played < GROUP_STAGE_GAMES){
+    const theirMaxPts = challenger.pts + (GROUP_STAGE_GAMES - challenger.played)*3;
+    return theirMaxPts >= target.pts;
+  }
+  return sortKey(challenger, target) <= 0; // challenger's frozen line sorts at-or-above target's current line
+}
+
 function computeThirdPlaceCertainty(thirds){
-  const maxPts = new Map(thirds.map(t=>[t.name, t.pts + (GROUP_STAGE_GAMES - t.played)*3]));
+  thirds.forEach(t=>{ t.maxPts = t.pts + (GROUP_STAGE_GAMES - t.played)*3; });
   thirds.forEach(t=>{
     const others = thirds.filter(o=>o.name!==t.name);
-    const couldMatchOrPass = others.filter(o=>maxPts.get(o.name) >= t.pts).length;
-    const alreadyAhead = others.filter(o=>o.pts > maxPts.get(t.name)).length;
-    t.maxPts = maxPts.get(t.name);
-    t.clinched = couldMatchOrPass <= 7;
+    const stillThreats = others.filter(o=>couldStillOutrank(o, t)).length;
+    const alreadyAhead = others.filter(o=>o.pts > t.maxPts).length;
+    t.clinched = stillThreats <= 7;
     t.eliminated = alreadyAhead >= 8;
   });
 }
