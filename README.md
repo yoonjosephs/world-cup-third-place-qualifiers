@@ -25,7 +25,7 @@ index.html                          Markup + tab/panel structure
 css/styles.css                       All styling
 js/data.js                           Bundled fallback dataset + the Annex C lookup table + its decoder
 js/app.js                            State, tiebreaker logic, rendering, live-data fetch, localStorage persistence
-data/standings.json                  Live points/GD/GF, written by the GitHub Action — fetched by js/app.js at page load
+data/standings.json                  Live points/GD/GF/gamesPlayed, written by the GitHub Action — fetched by js/app.js at page load
 scripts/team-id-map.mjs              Explicit football-data.org team-id -> {name, group} alias map
 scripts/import-standings.mjs         Fetches, validates, and writes data/standings.json
 .github/workflows/update-standings.yml   Schedules the importer every 20 minutes
@@ -38,7 +38,7 @@ scripts/import-standings.mjs         Fetches, validates, and writes data/standin
 A flat array of 48 rows, one per team:
 
 ```js
-[name, group, points, goalDifference, goalsScored, fairPlayScore, fifaRanking]
+[name, group, points, goalDifference, goalsScored, fairPlayScore, fifaRanking, gamesPlayed]
 ```
 
 - **fairPlayScore** follows FIFA's disciplinary-points convention: `0` is
@@ -48,15 +48,46 @@ A flat array of 48 rows, one per team:
 - **fifaRanking** is the team's position in the FIFA World Ranking — lower
   number is better. Frozen for the tournament by FIFA's own regulations
   (see below); never fetched live, on purpose.
+- **gamesPlayed** is `0`–`GROUP_STAGE_GAMES` (3 — a single round-robin of 4
+  teams). Shown directly in the UI ("PLD" / "Pld") and used to compute the
+  mathematical clinch/eliminate status described below. It's not part of
+  the tiebreaker sort itself.
 
 `js/app.js` expands each row into a `{name, group, pts, gd, gf, conduct,
-fifa}` object at load time, then — if `data/standings.json` is reachable —
-overwrites just `pts`/`gd`/`gf` with the live values before computing
-`pos` (1st–4th in group) and, for third-place teams, `rank`/`qualified`
-across all 12 thirds. `conduct` (fair-play) and `fifa` always come from
-`TEAMS_RAW`, live or not. If the fetch fails for any reason, `TEAMS_RAW`'s
-numbers are used as-is — it's the permanent fallback snapshot, not just
-a one-time seed, so keep it reasonably current (see below).
+fifa, played}` object at load time, then — if `data/standings.json` is
+reachable — overwrites `pts`/`gd`/`gf`/`played` with the live values
+before computing `pos` (1st–4th in group) and, for third-place teams,
+`rank`/`qualified` across all 12 thirds. `conduct` (fair-play) and `fifa`
+always come from `TEAMS_RAW`, live or not. If the fetch fails for any
+reason, `TEAMS_RAW`'s numbers are used as-is — it's the permanent fallback
+snapshot, not just a one-time seed, so keep it reasonably current (see
+below).
+
+### Clinched / eliminated status for the third-place race
+
+Beyond the current top-8 cut (`qualified`), each third-place team also
+gets a `clinched`/`eliminated` flag from `computeThirdPlaceCertainty()`
+in `js/app.js`, based purely on points (the primary tiebreaker) and
+`gamesPlayed`:
+
+- **`maxPts`** = current points + 3 × remaining games — the most points a
+  team could possibly finish group play with.
+- **`clinched`**: true if 7 or fewer of the other 11 thirds could ever
+  reach or exceed this team's *current* points. If at most 7 others can
+  ever catch up, this team can't be pushed below 8th by points alone,
+  no matter how the rest of the group stage goes.
+- **`eliminated`**: true if 8 or more of the other thirds *already* have
+  more points than this team's `maxPts` — i.e. even a perfect run through
+  the remaining games can't get them into the top 8 by points alone.
+
+This intentionally ignores goal difference/goals scored/fair-play/FIFA
+ranking when bounding a trailing team's ceiling, since — unlike points
+capped at 3-per-win — those can't be bounded the same way (a team could
+theoretically win 12–0). So it only ever calls a team clinched or
+eliminated when points alone make the outcome unavoidable; everything
+else is shown as a provisional **IN**/**OUT** that "could still move
+either way." The Third-Place Race table and the per-team scenario text
+both reflect this: **CLINCHED**/**ELIMINATED** vs. plain **IN**/**OUT**.
 
 ### `TABLE_COMPACT` (FIFA Annex C lookup table)
 
@@ -152,20 +183,22 @@ live" below). The pipeline:
 4. **Sanity checks** run before anything is written: exactly 4 teams per
    group, every team matched, the API's reported group matches what we
    expect for that team id, points in `0–9`, goals scored `≥ 0`, goal
-   difference within `±30`. If anything fails, the script logs why and
-   exits without touching `data/standings.json` — the site keeps serving
-   the last good data instead of garbage. (Check the Action's run summary
-   on GitHub if you want to see what was rejected and why.)
+   difference within `±30`, games played in `0–3`. If anything fails, the
+   script logs why and exits without touching `data/standings.json` — the
+   site keeps serving the last good data instead of garbage. (Check the
+   Action's run summary on GitHub if you want to see what was rejected
+   and why.)
 5. If everything checks out and the standings actually changed, it writes
    `data/standings.json` (`{lastUpdated, source, teams: [{name, group,
-   pts, gd, gf}, ...]}`) and the workflow commits it directly to `main`.
+   pts, gd, gf, played}, ...]}`) and the workflow commits it directly to
+   `main`.
 6. **`js/app.js`** fetches `data/standings.json` at page load
-   (`loadLiveStandings()`), overlays `pts`/`gd`/`gf` onto the `TEAMS_RAW`
-   baseline by name, and records `lastUpdated`/`source` for the
-   "Data note" banner. Any failure — network error, 404, malformed JSON,
-   or opening `index.html` straight from disk (`file://` blocks relative
-   `fetch()` in most browsers) — is caught, and the page silently falls
-   back to whatever's in `TEAMS_RAW`.
+   (`loadLiveStandings()`), overlays `pts`/`gd`/`gf`/`played` onto the
+   `TEAMS_RAW` baseline by name, and records `lastUpdated`/`source` for
+   the "Data note" banner. Any failure — network error, 404, malformed
+   JSON, or opening `index.html` straight from disk (`file://` blocks
+   relative `fetch()` in most browsers) — is caught, and the page
+   silently falls back to whatever's in `TEAMS_RAW`.
 
 ### Why fair-play and FIFA ranking aren't live
 
@@ -201,7 +234,7 @@ live" below). The pipeline:
 seed — keep it reasonably current so the page still makes sense for
 anyone who loads it while `data/standings.json` is unreachable:
 
-1. Update the affected teams' `points`/`goalDifference`/`goalsScored`.
+1. Update the affected teams' `points`/`goalDifference`/`goalsScored`/`gamesPlayed`.
 2. Bump `SNAPSHOT_VERSION` (e.g. `"2026-06-27"`) and the date in the
    "Data note" fallback text in `renderSnapshotNote()` (`js/app.js`).
 3. Leave `fairPlayScore` and `fifaRanking` alone unless you have a

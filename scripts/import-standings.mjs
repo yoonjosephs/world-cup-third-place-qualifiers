@@ -55,6 +55,7 @@ function validateAndExtract(payload) {
       const pts = row.points;
       const gf = row.goalsFor;
       const gd = row.goalDifference;
+      const played = row.playedGames;
       if (!Number.isInteger(pts) || pts < 0 || pts > 9) {
         errors.push(`${known.name}: points out of range (${pts})`);
       }
@@ -64,8 +65,11 @@ function validateAndExtract(payload) {
       if (!Number.isInteger(gd) || gd < -30 || gd > 30) {
         errors.push(`${known.name}: goalDifference out of sane range (${gd})`);
       }
+      if (!Number.isInteger(played) || played < 0 || played > 3) {
+        errors.push(`${known.name}: playedGames out of range (${played})`);
+      }
 
-      byName.set(known.name, { name: known.name, group: known.group, pts, gd, gf });
+      byName.set(known.name, { name: known.name, group: known.group, pts, gd, gf, played });
     }
   }
 

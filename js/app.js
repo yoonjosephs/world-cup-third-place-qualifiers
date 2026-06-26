@@ -1,7 +1,7 @@
 const STORAGE_KEY = "bestThirds2026:editedTeams";
 const STANDINGS_URL = "data/standings.json";
 
-let teams = TEAMS_RAW.map(t=>({name:t[0],group:t[1],pts:t[2],gd:t[3],gf:t[4],conduct:t[5],fifa:t[6]}));
+let teams = TEAMS_RAW.map(t=>({name:t[0],group:t[1],pts:t[2],gd:t[3],gf:t[4],conduct:t[5],fifa:t[6],played:t[7]}));
 let SNAPSHOT = JSON.parse(JSON.stringify(teams));
 
 // liveStatus describes where the *current* numbers (before any local edits)
@@ -30,6 +30,7 @@ async function loadLiveStandings(){
       if(!live) return;
       if(!Number.isInteger(live.pts) || !Number.isInteger(live.gd) || !Number.isInteger(live.gf)) return;
       t.pts = live.pts; t.gd = live.gd; t.gf = live.gf;
+      if(Number.isInteger(live.played) && live.played>=0 && live.played<=GROUP_STAGE_GAMES) t.played = live.played;
     });
     liveStatus = { ok:true, lastUpdated:data.lastUpdated, source:data.source||'live feed', version:data.lastUpdated };
     SNAPSHOT = JSON.parse(JSON.stringify(teams));
@@ -82,6 +83,37 @@ function thirdPlaceTable(){
   thirds.forEach((t,i)=>{t.rank=i+1; t.qualified = i<8;});
   return thirds;
 }
+// Mathematical certainty for the third-place race, based on points only
+// (the primary tiebreaker). For each third-place team, maxPts is the most
+// points they could possibly finish with — their current points plus a
+// win in every game they haven't played yet.
+//
+// clinched: true if at most 7 of the other 11 thirds could ever reach or
+// exceed this team's *current* points — meaning at least this team can't
+// be pushed below 8th by points alone, no matter how the rest of the
+// group stage plays out.
+//
+// eliminated: true if 8 or more of the other thirds already have *more*
+// points than this team's maxPts — meaning even a perfect run through
+// their remaining games can't get them into the top 8 by points alone.
+//
+// This deliberately ignores goal difference/goals scored/fair-play/FIFA
+// ranking when judging the maximum a trailing team could reach, since
+// those can't be bounded the same way a 3-points-per-win ceiling can —
+// so it only ever calls "clinched"/"eliminated" when points alone make
+// the outcome unavoidable, and leaves everything else as "still alive".
+function computeThirdPlaceCertainty(thirds){
+  const maxPts = new Map(thirds.map(t=>[t.name, t.pts + (GROUP_STAGE_GAMES - t.played)*3]));
+  thirds.forEach(t=>{
+    const others = thirds.filter(o=>o.name!==t.name);
+    const couldMatchOrPass = others.filter(o=>maxPts.get(o.name) >= t.pts).length;
+    const alreadyAhead = others.filter(o=>o.pts > maxPts.get(t.name)).length;
+    t.maxPts = maxPts.get(t.name);
+    t.clinched = couldMatchOrPass <= 7;
+    t.eliminated = alreadyAhead >= 8;
+  });
+}
+
 function winnerOf(g){return byGroup(g).find(t=>t.pos===1);}
 function runnerUpOf(g){return byGroup(g).find(t=>t.pos===2);}
 function thirdOf(g){return byGroup(g).find(t=>t.pos===3);}
@@ -110,6 +142,7 @@ function statusOf(t){
 function render(){
   computeGroupPositions();
   const thirds = thirdPlaceTable();
+  computeThirdPlaceCertainty(thirds);
   renderSnapshotNote();
   renderThirdTable(thirds);
   renderGroups();
@@ -134,19 +167,28 @@ function renderSnapshotNote(){
     `${dataLine} Edit any team in <b>Groups &amp; Edit Data</b> to test a scenario; edits are saved to this browser only.${editNote}`;
 }
 
+function thirdStatusLabel(t){
+  if(t.qualified) return t.clinched ? 'CLINCHED' : 'IN';
+  return t.eliminated ? 'ELIMINATED' : 'OUT';
+}
+
 function renderThirdTable(thirds){
   const el = document.getElementById('tpTable');
   let html='';
   thirds.forEach((t,i)=>{
-    const a11yLabel = `${t.name}, Group ${t.group}. ${t.pts} points, goal difference ${fmtGD(t.gd)}, ${t.gf} goals scored, fair-play score ${fmtConduct(t.conduct)}. Rank ${i+1} of 12 third-place teams, currently ${t.qualified?'qualifying':'outside the qualifying spots'}.`;
+    const label = thirdStatusLabel(t);
+    const certaintyWord = label==='CLINCHED' ? 'mathematically clinched a qualifying spot'
+      : label==='ELIMINATED' ? 'mathematically eliminated from qualifying'
+      : t.qualified ? 'currently in a qualifying spot, not yet clinched' : 'currently outside the qualifying spots, not yet eliminated';
+    const a11yLabel = `${t.name}, Group ${t.group}. ${t.pts} points, goal difference ${fmtGD(t.gd)}, ${t.gf} goals scored, fair-play score ${fmtConduct(t.conduct)}, ${t.played} of ${GROUP_STAGE_GAMES} group games played. Rank ${i+1} of 12 third-place teams, ${certaintyWord}.`;
     html += `<button type="button" class="tp-row ${t.qualified?'q':'o'}" data-team="${t.name}" aria-label="${a11yLabel}">
       <span class="tp-rank" aria-hidden="true">${i+1}</span>
-      <span class="tp-team" aria-hidden="true"><span class="tp-name">${t.name}</span><span class="tp-group">GROUP ${t.group}</span></span>
+      <span class="tp-team" aria-hidden="true"><span class="tp-name">${t.name}</span><span class="tp-group">GROUP ${t.group} · ${t.played}/${GROUP_STAGE_GAMES} PLD</span></span>
       <span class="tp-stat" aria-hidden="true">${t.pts}</span>
       <span class="tp-stat" aria-hidden="true">${fmtGD(t.gd)}</span>
       <span class="tp-stat" aria-hidden="true">${t.gf}</span>
       <span class="tp-stat" aria-hidden="true">${fmtConduct(t.conduct)}</span>
-      <span class="tp-status" aria-hidden="true">${t.qualified?'IN':'OUT'}</span>
+      <span class="tp-status" aria-hidden="true">${label}</span>
     </button>`;
     if(i===7){
       html += `<div class="cutline"><span>Cut line — top 8 advance</span><div class="line"></div></div>`;
@@ -167,7 +209,7 @@ function renderGroups(){
   GROUP_LETTERS.forEach(g=>{
     const list = byGroup(g).slice().sort((a,b)=>a.pos-b.pos);
     html += `<div class="group-card"><h3>Group <span class="gl">${g}</span></h3>
-      <div class="glabels" aria-hidden="true"><span></span><span>Team</span><span>Pts</span><span>GD</span><span>GF</span></div>`;
+      <div class="glabels" aria-hidden="true"><span></span><span>Team</span><span>Pts</span><span>GD</span><span>GF</span><span>Pld</span></div>`;
     list.forEach(t=>{
       html += `<div class="gteam">
         <span class="dot p${t.pos}" aria-hidden="true"></span>
@@ -175,6 +217,7 @@ function renderGroups(){
         <input type="number" inputmode="numeric" data-name="${t.name}" data-field="pts" value="${t.pts}" aria-label="${t.name} points">
         <input type="number" inputmode="numeric" data-name="${t.name}" data-field="gd" value="${t.gd}" aria-label="${t.name} goal difference">
         <input type="number" inputmode="numeric" data-name="${t.name}" data-field="gf" value="${t.gf}" aria-label="${t.name} goals scored">
+        <input type="number" inputmode="numeric" min="0" max="${GROUP_STAGE_GAMES}" data-name="${t.name}" data-field="played" value="${t.played}" aria-label="${t.name} games played, of ${GROUP_STAGE_GAMES}">
       </div>`;
     });
     html += `</div>`;
@@ -183,8 +226,10 @@ function renderGroups(){
   el.querySelectorAll('input').forEach(inp=>{
     inp.addEventListener('input', ()=>{
       const t = teams.find(x=>x.name===inp.dataset.name);
-      const v = parseInt(inp.value,10);
-      t[inp.dataset.field] = isNaN(v)?0:v;
+      let v = parseInt(inp.value,10);
+      if(isNaN(v)) v = 0;
+      if(inp.dataset.field==='played') v = Math.max(0, Math.min(GROUP_STAGE_GAMES, v));
+      t[inp.dataset.field] = v;
       usingSavedEdits = true;
       saveTeams();
       render();
@@ -256,12 +301,14 @@ function buildScenarioText(name){
       }
     }
     const posWord = t.pos===1?'won Group '+g:'finished runner-up in Group '+g;
+    const groupDoneNote = t.played>=GROUP_STAGE_GAMES ? ` Group ${g} has finished all ${GROUP_STAGE_GAMES} games, so this is locked in.` : ` Group ${g} still has games left (${t.name} has played ${t.played} of ${GROUP_STAGE_GAMES}), so this could still change.`;
     return `<div class="scenario-head"><span class="badge safe">Through</span><b>${t.name}</b></div>
-      ${t.name} has ${posWord} and is into the Round of 32. They play <b>${oppHtml||'TBD'}</b> on ${dateVenue||'a date to be confirmed'}.`;
+      ${t.name} has ${posWord} and is into the Round of 32. They play <b>${oppHtml||'TBD'}</b> on ${dateVenue||'a date to be confirmed'}.${groupDoneNote}`;
   }
   if(t.pos===4){
+    const groupDoneNote = t.played>=GROUP_STAGE_GAMES ? ` Group ${g} has finished all ${GROUP_STAGE_GAMES} games, so this is final.` : ` ${t.name} has played ${t.played} of ${GROUP_STAGE_GAMES} group games — this is provisional until Group ${g} finishes.`;
     return `<div class="scenario-head"><span class="badge out">Eliminated</span><b>${t.name}</b></div>
-      ${t.name} finished fourth in Group ${g} on the current numbers and cannot reach the Round of 32 from there.`;
+      ${t.name} finished fourth in Group ${g} on the current numbers and cannot reach the Round of 32 from there.${groupDoneNote}`;
   }
   // pos 3
   const thirds = thirdPlaceTable();
@@ -286,9 +333,21 @@ function buildScenarioText(name){
       oppText = `<br>If the table finished right now, they'd play <b>${w?w.name:'Group '+oppSlot+' winner'}</b> in the Round of 32 (${m?m.date+' · '+m.venue:''}).`;
     }
   }
-  const badge = mine.qualified ? '<span class="badge safe">In a qualifying spot</span>' : '<span class="badge bubble">On the bubble</span>';
+  const label = thirdStatusLabel(mine);
+  const badge = label==='CLINCHED' ? '<span class="badge safe">Clinched</span>'
+    : label==='ELIMINATED' ? '<span class="badge out">Eliminated</span>'
+    : mine.qualified ? '<span class="badge safe">In a qualifying spot</span>' : '<span class="badge bubble">On the bubble</span>';
+  const playedText = `${t.name} has played ${mine.played} of ${GROUP_STAGE_GAMES} group games`;
+  let certaintyText = '';
+  if(label==='CLINCHED'){
+    certaintyText = ` Even if every other team behind them in the third-place race wins all of its remaining games, at most 7 of them could reach ${mine.pts} points — so ${t.name} can't be pushed below 8th by points alone. Their spot is mathematically clinched.`;
+  } else if(label==='ELIMINATED'){
+    certaintyText = ` Even with a maximum run of wins in their remaining games (best case: ${mine.maxPts} points), at least 8 other third-placed teams already have more points than that — so ${t.name} can no longer reach the top 8. They're mathematically eliminated from best-thirds qualification.`;
+  } else {
+    certaintyText = ` Their group stage isn't fully decided yet — neither ${t.name}'s spot nor enough of the field around them is locked in, so this could still move either way.`;
+  }
   return `<div class="scenario-head">${badge}<b>${t.name}</b><span style="color:var(--text-faint);font-size:12px;">Rank ${mine.rank} of 12 third-place teams</span></div>
-    ${t.name} is currently <b>${mine.qualified?'#'+mine.rank+' — inside the top 8':'#'+mine.rank+' — outside the top 8'}</b> third-placed teams (${mine.pts} pts, ${fmtGD(mine.gd)} GD, ${mine.gf} GF). ${gapText} The order is set by points, then goal difference, then goals scored, then fair-play score, then FIFA ranking — try editing ${t.name}'s numbers in the Groups tab to see exactly what flips their position.${oppText}`;
+    ${t.name} is currently <b>${mine.qualified?'#'+mine.rank+' — inside the top 8':'#'+mine.rank+' — outside the top 8'}</b> third-placed teams (${mine.pts} pts, ${fmtGD(mine.gd)} GD, ${mine.gf} GF). ${playedText}.${certaintyText} ${gapText} The order is set by points, then goal difference, then goals scored, then fair-play score, then FIFA ranking — try editing ${t.name}'s numbers in the Groups tab to see exactly what flips their position.${oppText}`;
 }
 
 function renderScenario(){

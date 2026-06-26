@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2026-06-26T01:26:12.596Z",
+  "lastUpdated": "2026-06-26T02:20:01.826Z",
   "source": "football-data.org",
   "teams": [
     {
@@ -7,336 +7,384 @@
       "group": "A",
       "pts": 1,
       "gd": -4,
-      "gf": 2
+      "gf": 2,
+      "played": 3
     },
     {
       "name": "Mexico",
       "group": "A",
       "pts": 9,
       "gd": 6,
-      "gf": 6
+      "gf": 6,
+      "played": 3
     },
     {
       "name": "South Africa",
       "group": "A",
       "pts": 4,
       "gd": -1,
-      "gf": 2
+      "gf": 2,
+      "played": 3
     },
     {
       "name": "South Korea",
       "group": "A",
       "pts": 3,
       "gd": -1,
-      "gf": 2
+      "gf": 2,
+      "played": 3
     },
     {
       "name": "Bosnia and Herzegovina",
       "group": "B",
       "pts": 4,
       "gd": -1,
-      "gf": 5
+      "gf": 5,
+      "played": 3
     },
     {
       "name": "Canada",
       "group": "B",
       "pts": 4,
       "gd": 5,
-      "gf": 8
+      "gf": 8,
+      "played": 3
     },
     {
       "name": "Qatar",
       "group": "B",
       "pts": 1,
       "gd": -8,
-      "gf": 2
+      "gf": 2,
+      "played": 3
     },
     {
       "name": "Switzerland",
       "group": "B",
       "pts": 7,
       "gd": 4,
-      "gf": 7
+      "gf": 7,
+      "played": 3
     },
     {
       "name": "Brazil",
       "group": "C",
       "pts": 7,
       "gd": 6,
-      "gf": 7
+      "gf": 7,
+      "played": 3
     },
     {
       "name": "Haiti",
       "group": "C",
       "pts": 0,
       "gd": -6,
-      "gf": 2
+      "gf": 2,
+      "played": 3
     },
     {
       "name": "Morocco",
       "group": "C",
       "pts": 7,
       "gd": 3,
-      "gf": 6
+      "gf": 6,
+      "played": 3
     },
     {
       "name": "Scotland",
       "group": "C",
       "pts": 3,
       "gd": -3,
-      "gf": 1
+      "gf": 1,
+      "played": 3
     },
     {
       "name": "Australia",
       "group": "D",
-      "pts": 3,
+      "pts": 4,
       "gd": 0,
-      "gf": 2
+      "gf": 2,
+      "played": 3
     },
     {
       "name": "Paraguay",
       "group": "D",
-      "pts": 3,
+      "pts": 4,
       "gd": -2,
-      "gf": 2
+      "gf": 2,
+      "played": 3
     },
     {
       "name": "Türkiye",
       "group": "D",
-      "pts": 0,
+      "pts": 1,
       "gd": -3,
-      "gf": 0
+      "gf": 0,
+      "played": 3
     },
     {
       "name": "USA",
       "group": "D",
-      "pts": 6,
+      "pts": 7,
       "gd": 5,
-      "gf": 6
+      "gf": 6,
+      "played": 3
     },
     {
       "name": "Curaçao",
       "group": "E",
       "pts": 1,
       "gd": -8,
-      "gf": 1
+      "gf": 1,
+      "played": 3
     },
     {
       "name": "Ecuador",
       "group": "E",
       "pts": 4,
       "gd": 0,
-      "gf": 2
+      "gf": 2,
+      "played": 3
     },
     {
       "name": "Germany",
       "group": "E",
       "pts": 6,
       "gd": 6,
-      "gf": 10
+      "gf": 10,
+      "played": 3
     },
     {
       "name": "Ivory Coast",
       "group": "E",
       "pts": 6,
       "gd": 2,
-      "gf": 4
+      "gf": 4,
+      "played": 3
     },
     {
       "name": "Japan",
       "group": "F",
       "pts": 5,
       "gd": 4,
-      "gf": 7
+      "gf": 7,
+      "played": 3
     },
     {
       "name": "Netherlands",
       "group": "F",
       "pts": 7,
       "gd": 6,
-      "gf": 10
+      "gf": 10,
+      "played": 3
     },
     {
       "name": "Sweden",
       "group": "F",
       "pts": 4,
       "gd": 0,
-      "gf": 7
+      "gf": 7,
+      "played": 3
     },
     {
       "name": "Tunisia",
       "group": "F",
       "pts": 0,
       "gd": -10,
-      "gf": 2
+      "gf": 2,
+      "played": 3
     },
     {
       "name": "Belgium",
       "group": "G",
       "pts": 2,
       "gd": 0,
-      "gf": 1
+      "gf": 1,
+      "played": 2
     },
     {
       "name": "Egypt",
       "group": "G",
       "pts": 4,
       "gd": 2,
-      "gf": 4
+      "gf": 4,
+      "played": 2
     },
     {
       "name": "Iran",
       "group": "G",
       "pts": 2,
       "gd": 0,
-      "gf": 2
+      "gf": 2,
+      "played": 2
     },
     {
       "name": "New Zealand",
       "group": "G",
       "pts": 1,
       "gd": -2,
-      "gf": 3
+      "gf": 3,
+      "played": 2
     },
     {
       "name": "Cape Verde",
       "group": "H",
       "pts": 2,
       "gd": 0,
-      "gf": 2
+      "gf": 2,
+      "played": 2
     },
     {
       "name": "Saudi Arabia",
       "group": "H",
       "pts": 1,
       "gd": -4,
-      "gf": 1
+      "gf": 1,
+      "played": 2
     },
     {
       "name": "Spain",
       "group": "H",
       "pts": 4,
       "gd": 4,
-      "gf": 4
+      "gf": 4,
+      "played": 2
     },
     {
       "name": "Uruguay",
       "group": "H",
       "pts": 2,
       "gd": 0,
-      "gf": 3
+      "gf": 3,
+      "played": 2
     },
     {
       "name": "France",
       "group": "I",
       "pts": 6,
       "gd": 5,
-      "gf": 6
+      "gf": 6,
+      "played": 2
     },
     {
       "name": "Iraq",
       "group": "I",
       "pts": 0,
       "gd": -6,
-      "gf": 1
+      "gf": 1,
+      "played": 2
     },
     {
       "name": "Norway",
       "group": "I",
       "pts": 6,
       "gd": 4,
-      "gf": 7
+      "gf": 7,
+      "played": 2
     },
     {
       "name": "Senegal",
       "group": "I",
       "pts": 0,
       "gd": -3,
-      "gf": 3
+      "gf": 3,
+      "played": 2
     },
     {
       "name": "Algeria",
       "group": "J",
       "pts": 3,
       "gd": -2,
-      "gf": 2
+      "gf": 2,
+      "played": 2
     },
     {
       "name": "Argentina",
       "group": "J",
       "pts": 6,
       "gd": 5,
-      "gf": 5
+      "gf": 5,
+      "played": 2
     },
     {
       "name": "Austria",
       "group": "J",
       "pts": 3,
       "gd": 0,
-      "gf": 3
+      "gf": 3,
+      "played": 2
     },
     {
       "name": "Jordan",
       "group": "J",
       "pts": 0,
       "gd": -3,
-      "gf": 2
+      "gf": 2,
+      "played": 2
     },
     {
       "name": "Colombia",
       "group": "K",
       "pts": 6,
       "gd": 3,
-      "gf": 4
+      "gf": 4,
+      "played": 2
     },
     {
       "name": "DR Congo",
       "group": "K",
       "pts": 1,
       "gd": -1,
-      "gf": 1
+      "gf": 1,
+      "played": 2
     },
     {
       "name": "Portugal",
       "group": "K",
       "pts": 4,
       "gd": 5,
-      "gf": 6
+      "gf": 6,
+      "played": 2
     },
     {
       "name": "Uzbekistan",
       "group": "K",
       "pts": 0,
       "gd": -7,
-      "gf": 1
+      "gf": 1,
+      "played": 2
     },
     {
       "name": "Croatia",
       "group": "L",
       "pts": 3,
       "gd": -1,
-      "gf": 3
+      "gf": 3,
+      "played": 2
     },
     {
       "name": "England",
       "group": "L",
       "pts": 4,
       "gd": 2,
-      "gf": 4
+      "gf": 4,
+      "played": 2
     },
     {
       "name": "Ghana",
       "group": "L",
       "pts": 4,
       "gd": 1,
-      "gf": 1
+      "gf": 1,
+      "played": 2
     },
     {
       "name": "Panama",
       "group": "L",
       "pts": 0,
       "gd": -2,
-      "gf": 0
+      "gf": 0,
+      "played": 2
     }
   ]
 }
