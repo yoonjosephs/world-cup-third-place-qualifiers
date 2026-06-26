@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2026-06-26T20:14:10.967Z",
+  "lastUpdated": "2026-06-26T21:41:19.259Z",
   "source": "football-data.org",
   "teams": [
     {
@@ -294,8 +294,8 @@
       "name": "France",
       "group": "I",
       "pts": 9,
-      "gd": 7,
-      "gf": 9,
+      "gd": 8,
+      "gf": 10,
       "played": 3,
       "live": false
     },
@@ -303,16 +303,16 @@
       "name": "Iraq",
       "group": "I",
       "pts": 0,
-      "gd": -7,
+      "gd": -11,
       "gf": 1,
       "played": 3,
-      "live": true
+      "live": false
     },
     {
       "name": "Norway",
       "group": "I",
       "pts": 6,
-      "gd": 2,
+      "gd": 1,
       "gf": 8,
       "played": 3,
       "live": false
@@ -321,10 +321,10 @@
       "name": "Senegal",
       "group": "I",
       "pts": 3,
-      "gd": -2,
-      "gf": 4,
+      "gd": 2,
+      "gf": 8,
       "played": 3,
-      "live": true
+      "live": false
     },
     {
       "name": "Algeria",
