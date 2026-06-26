@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Best Thirds — 2026 World Cup Round of 32 Calculator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to main content</a>
+<div class="wrap">
+
+  <header>
+    <p class="eyebrow">Round of 32 Qualification</p>
+    <h1 class="title">Best <em>Thirds</em></h1>
+    <p class="subtitle">A live calculator for the 2026 World Cup's best third-placed teams — who's through, who's on the bubble, and exactly who each team meets in the Round of 32, straight from FIFA's own tiebreaker rules and the official 495-combination bracket table.</p>
+    <div class="snapshot-note" id="snapshotNote" aria-live="polite"></div>
+  </header>
+
+  <nav class="tabs" role="tablist" aria-label="Calculator views">
+    <button class="tab active" role="tab" id="tab-third" aria-selected="true" aria-controls="view-third" tabindex="0" data-tab="third">Third-Place Race</button>
+    <button class="tab" role="tab" id="tab-groups" aria-selected="false" aria-controls="view-groups" tabindex="-1" data-tab="groups">Groups &amp; Edit Data</button>
+    <button class="tab" role="tab" id="tab-bracket" aria-selected="false" aria-controls="view-bracket" tabindex="-1" data-tab="bracket">Round of 32 Bracket</button>
+  </nav>
+
+  <main id="main">
+    <div class="lookup">
+      <div class="lookup-row">
+        <label for="teamSelect">What does</label>
+        <select id="teamSelect" class="team-select" aria-label="Choose a team to see what they need to qualify or who they play next"></select>
+        <label for="teamSelect">need?</label>
+      </div>
+      <div class="scenario" id="scenarioBox" aria-live="polite"></div>
+    </div>
+
+    <div id="view-third" role="tabpanel" aria-labelledby="tab-third">
+      <h2 class="panel-title">The Third-Place Table</h2>
+      <p class="panel-desc">All 12 teams currently sitting third in their group, ranked by FIFA's tiebreakers: points → goal difference → goals scored → fair-play score → FIFA ranking. The top 8 advance.</p>
+      <div class="thead-row" aria-hidden="true">
+        <span>#</span><span>Team</span><span class="r">Pts</span><span class="r">GD</span><span class="r">GF</span><span class="r">Cards</span><span class="r">Status</span>
+      </div>
+      <div class="tp-table" id="tpTable"></div>
+    </div>
+
+    <div id="view-groups" role="tabpanel" aria-labelledby="tab-groups" hidden>
+      <div class="groups-toolbar">
+        <div>
+          <h2 class="panel-title">Groups — edit any number</h2>
+          <p class="panel-desc">Change a team's points, goal difference, or goals scored to try a scenario. Every group position, the third-place table, and the bracket below recalculate instantly. Edits are saved in this browser only and reload automatically next time you visit.</p>
+        </div>
+        <button class="btn" id="resetBtn">Reset to original snapshot</button>
+      </div>
+      <div class="group-grid" id="groupGrid"></div>
+      <p class="gnote">Position within each group is computed from points → goal difference → goals scored → fair-play (card) score → FIFA ranking. Head-to-head results between tied teams aren't modeled — if two teams in a group are tied on all five criteria, check the head-to-head result yourself.</p>
+    </div>
+
+    <div id="view-bracket" role="tabpanel" aria-labelledby="tab-bracket" hidden>
+      <h2 class="panel-title">Round of 32 — if the group stage ended right now</h2>
+      <p class="panel-desc">8 of the 12 group winners face a best third-placed team; the other 4 face a runner-up. Which third-place team lands where depends on <i>which 8 groups</i> supply a qualifying third-place finisher — FIFA fixed all 495 combinations in Annex C of the regulations, and that exact table drives the matchups below.</p>
+      <div class="bracket-list" id="bracketList"></div>
+    </div>
+  </main>
+
+  <footer class="foot">
+    Snapshot compiled from FIFA's published standings and tiebreaker regulations and from sports-media tracking as of the data note above — group-stage results were still coming in for several groups, so treat anything not yet mathematically locked as provisional. The Round of 32 pairing structure (which group plays which) and the third-place tiebreaker order are fixed by FIFA regulation and won't change; the live tracker doing the day-to-day numbers can be cross-checked at FIFA's own standings page.
+  </footer>
+
+</div>
+
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
