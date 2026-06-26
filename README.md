@@ -180,7 +180,16 @@ score and FIFA ranking don't (see "Why fair-play and FIFA ranking aren't
 live" below). The pipeline:
 
 1. **`.github/workflows/update-standings.yml`** runs `scripts/import-standings.mjs`
-   on a 20-minute cron (plus manual `workflow_dispatch`).
+   on a `*/5 * * * *` cron (plus manual `workflow_dispatch`). In practice,
+   GitHub's free scheduler doesn't guarantee that cadence — expect a long
+   (multi-hour) delay before the first run ever fires, and gaps of hours
+   between runs after that under platform load, not a steady 5 minutes.
+   This is a GitHub-side limitation, not a bug in the workflow; the
+   snapshot-note banner always shows the real `lastUpdated` time so the
+   page never claims to be fresher than it is. If you need reliable
+   timing, trigger it manually from the Actions tab ("Run workflow") or
+   point an external scheduler (e.g. cron-job.org) at the GitHub API's
+   `workflow_dispatch` endpoint.
 2. The script calls football-data.org's `GET /v4/competitions/WC/standings`
    using an API key read from the `FOOTBALL_DATA_API_KEY` repo secret (sent
    as the `X-Auth-Token` header) — **the key never appears in client-side

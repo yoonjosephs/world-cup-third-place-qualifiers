@@ -2,15 +2,21 @@ name: Update World Cup standings
 
 on:
   schedule:
-    # Every 5 minutes — the fastest GitHub Actions' own scheduler reliably
-    # supports (anything tighter, including "every minute", silently
-    # collapses to this same 5-minute floor, and even this can slip by
-    # several minutes during platform-wide peak load). Still only ~288
-    # calls/day, nowhere near football-data.org's 10-requests/minute cap.
-    # Group stage runs through 2026-06-27; this workflow is cheap to leave
-    # running after that too (it no-ops once standings stop changing — see
-    # the "no change" branch in scripts/import-standings.mjs), but feel
-    # free to delete/disable this schedule once the bracket locks.
+    # Every 5 minutes is the fastest interval GitHub Actions' schedule
+    # trigger accepts (anything tighter, including "every minute", silently
+    # collapses to this same floor) — but in practice the free scheduler
+    # doesn't honor it reliably: expect hours of cold-start delay before
+    # the first run, and multi-hour gaps between runs after that under
+    # platform load, not a steady 5 minutes. That's a GitHub-side
+    # limitation, not a bug here — see README "Live data pipeline" for the
+    # observed timeline and workaround options (manual dispatch / an
+    # external scheduler hitting the workflow_dispatch API). Still only
+    # ~288 calls/day even if it ran exactly on schedule, nowhere near
+    # football-data.org's 10-requests/minute cap. Group stage runs through
+    # 2026-06-27; this workflow is cheap to leave running after that too
+    # (it no-ops once standings stop changing — see the "no change" branch
+    # in scripts/import-standings.mjs), but feel free to delete/disable
+    # this schedule once the bracket locks.
     - cron: "*/5 * * * *"
   workflow_dispatch: {}
 
