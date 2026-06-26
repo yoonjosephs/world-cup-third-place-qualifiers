@@ -14,14 +14,21 @@ A static, no-build, client-side calculator for the 2026 FIFA World Cup's
 
 It's plain HTML/CSS/JS — no build step, no backend, no framework. Open
 `index.html` directly or serve the folder with any static file server.
+Points, goal difference, and goals scored are kept current automatically
+by a scheduled GitHub Action (see "Live data pipeline" below); fair-play
+score and FIFA ranking are fixed inputs that don't change live.
 
 ## Files
 
 ```
-index.html        Markup + tab/panel structure
-css/styles.css     All styling
-js/data.js         Embedded dataset + the Annex C lookup table + its decoder
-js/app.js          State, tiebreaker logic, rendering, localStorage persistence
+index.html                          Markup + tab/panel structure
+css/styles.css                       All styling
+js/data.js                           Bundled fallback dataset + the Annex C lookup table + its decoder
+js/app.js                            State, tiebreaker logic, rendering, live-data fetch, localStorage persistence
+data/standings.json                  Live points/GD/GF, written by the GitHub Action — fetched by js/app.js at page load
+scripts/team-id-map.mjs              Explicit football-data.org team-id -> {name, group} alias map
+scripts/import-standings.mjs         Fetches, validates, and writes data/standings.json
+.github/workflows/update-standings.yml   Schedules the importer every 20 minutes
 ```
 
 ## Data model
@@ -36,13 +43,20 @@ A flat array of 48 rows, one per team:
 
 - **fairPlayScore** follows FIFA's disciplinary-points convention: `0` is
   clean, more negative means more accumulated yellow/red-card penalties.
-  Higher (closer to zero) wins a tiebreak.
+  Higher (closer to zero) wins a tiebreak. **Not live** — see "Live data
+  pipeline" for why — update it by hand if a real tie at that level comes up.
 - **fifaRanking** is the team's position in the FIFA World Ranking — lower
-  number is better.
+  number is better. Frozen for the tournament by FIFA's own regulations
+  (see below); never fetched live, on purpose.
 
 `js/app.js` expands each row into a `{name, group, pts, gd, gf, conduct,
-fifa}` object at load time, then computes `pos` (1st–4th in group) and,
-for third-place teams, `rank`/`qualified` across all 12 thirds.
+fifa}` object at load time, then — if `data/standings.json` is reachable —
+overwrites just `pts`/`gd`/`gf` with the live values before computing
+`pos` (1st–4th in group) and, for third-place teams, `rank`/`qualified`
+across all 12 thirds. `conduct` (fair-play) and `fifa` always come from
+`TEAMS_RAW`, live or not. If the fetch fails for any reason, `TEAMS_RAW`'s
+numbers are used as-is — it's the permanent fallback snapshot, not just
+a one-time seed, so keep it reasonably current (see below).
 
 ### `TABLE_COMPACT` (FIFA Annex C lookup table)
 
@@ -115,29 +129,85 @@ calculator will leave such teams in whatever order they appear in
 `TEAMS_RAW` until you break the tie manually by editing one of the five
 numeric fields. The app's own UI flags this in the Groups tab.
 
-## Updating the snapshot as real results come in
+## Live data pipeline
 
-1. Open `js/data.js`.
-2. For each match result, update the affected teams' rows in `TEAMS_RAW`:
-   add to `points` (3 for a win, 1 each for a draw), update
-   `goalDifference` and `goalsScored`, and adjust `fairPlayScore` for any
-   yellow/red cards shown (FIFA's disciplinary deductions: −1 per yellow,
-   −3 for a single red, −4 for two-yellows-into-red).
-3. Bump `SNAPSHOT_VERSION` to the date of the new snapshot (e.g.
-   `"2026-06-27"`). This string is compared against what's saved in each
-   visitor's `localStorage` — bumping it means anyone with old local edits
-   gets the fresh snapshot instead of a stale mix, the next time they load
-   the page.
-4. Update the date in the "Data note" text in `renderSnapshotNote()`
-   (`js/app.js`) to match.
-5. `FIFA ranking` only changes when FIFA publishes a new ranking (monthly,
-   not per-match) — leave it alone unless a new ranking has actually been
-   released.
-6. `POOLS`, `MATCHES`, `SLOT_ORDER`, and `TABLE_COMPACT` are fixed
-   tournament structure, not results — don't touch them.
+Points, goal difference, and goals scored update automatically — fair-play
+score and FIFA ranking don't (see "Why fair-play and FIFA ranking aren't
+live" below). The pipeline:
 
-No build step is required; editing `js/data.js` and reloading the page
-(or redeploying) is the entire update process.
+1. **`.github/workflows/update-standings.yml`** runs `scripts/import-standings.mjs`
+   on a 20-minute cron (plus manual `workflow_dispatch`).
+2. The script calls football-data.org's `GET /v4/competitions/WC/standings`
+   using an API key read from the `FOOTBALL_DATA_API_KEY` repo secret (sent
+   as the `X-Auth-Token` header) — **the key never appears in client-side
+   code**, only in the Action's environment.
+3. **Team matching** uses `scripts/team-id-map.mjs`, an explicit map of
+   football-data.org's numeric `team.id` → `{name, group}` for all 48
+   teams. We match on id, not name strings, because the API's names don't
+   always match ours (`"United States"` vs `"USA"`, `"Bosnia-Herzegovina"`
+   vs `"Bosnia and Herzegovina"`, `"Turkey"` vs `"Türkiye"`, `"Congo DR"`
+   vs `"DR Congo"`, `"Cape Verde Islands"` vs `"Cape Verde"`). Any
+   unrecognized team id is logged explicitly and blocks the update — it's
+   never silently guessed or dropped.
+4. **Sanity checks** run before anything is written: exactly 4 teams per
+   group, every team matched, the API's reported group matches what we
+   expect for that team id, points in `0–9`, goals scored `≥ 0`, goal
+   difference within `±30`. If anything fails, the script logs why and
+   exits without touching `data/standings.json` — the site keeps serving
+   the last good data instead of garbage. (Check the Action's run summary
+   on GitHub if you want to see what was rejected and why.)
+5. If everything checks out and the standings actually changed, it writes
+   `data/standings.json` (`{lastUpdated, source, teams: [{name, group,
+   pts, gd, gf}, ...]}`) and the workflow commits it directly to `main`.
+6. **`js/app.js`** fetches `data/standings.json` at page load
+   (`loadLiveStandings()`), overlays `pts`/`gd`/`gf` onto the `TEAMS_RAW`
+   baseline by name, and records `lastUpdated`/`source` for the
+   "Data note" banner. Any failure — network error, 404, malformed JSON,
+   or opening `index.html` straight from disk (`file://` blocks relative
+   `fetch()` in most browsers) — is caught, and the page silently falls
+   back to whatever's in `TEAMS_RAW`.
+
+### Why fair-play and FIFA ranking aren't live
+
+- **FIFA ranking** is frozen by FIFA's own regulations — the ranking used
+  for this tiebreaker is the one published *before* the tournament
+  started, not a live value. Don't fetch it live even if you find a
+  source that offers it.
+- **Fair-play score** isn't exposed as a ready field by football-data.org's
+  free tier (cards/lineups require a paid add-on), and even paid sources
+  generally don't hand you FIFA's exact disciplinary-point formula
+  (−1 yellow / −3 red / −4 second-yellow) pre-computed — you'd have to
+  aggregate it yourself from raw match card events. Given it's the 4th of
+  5 tiebreakers (only matters on an exact points/GD/GF tie) and the group
+  stage locks in a couple of days, that wasn't worth automating. Edit it
+  by hand in `js/data.js` if a real tie at that level shows up.
+
+### Re-running or adjusting the importer
+
+- Trigger it manually: **Actions → Update World Cup standings → Run workflow**
+  on GitHub, or locally with `FOOTBALL_DATA_API_KEY=... node scripts/import-standings.mjs`.
+- Change the polling cadence by editing the `cron` line in
+  `.github/workflows/update-standings.yml`. Once the bracket locks
+  (group stage ends, all 8 best-thirds are fixed), this workflow has
+  nothing left to usefully update — disable the schedule or delete the
+  file rather than letting it poll an unchanging table forever.
+- If football-data.org ever changes a team's `id` (shouldn't happen) or
+  you swap providers, update `scripts/team-id-map.mjs` — that's the only
+  place name/id matching logic lives.
+
+### Updating `TEAMS_RAW`'s fallback values
+
+`TEAMS_RAW` in `js/data.js` is the permanent fallback, not a one-time
+seed — keep it reasonably current so the page still makes sense for
+anyone who loads it while `data/standings.json` is unreachable:
+
+1. Update the affected teams' `points`/`goalDifference`/`goalsScored`.
+2. Bump `SNAPSHOT_VERSION` (e.g. `"2026-06-27"`) and the date in the
+   "Data note" fallback text in `renderSnapshotNote()` (`js/app.js`).
+3. Leave `fairPlayScore` and `fifaRanking` alone unless you have a
+   specific reason to change them (see above).
+4. `POOLS`, `MATCHES`, `SLOT_ORDER`, and `TABLE_COMPACT` are fixed
+   tournament structure, not results — never touch them here.
 
 ## Local edits & persistence
 
@@ -145,11 +215,14 @@ Visiting the **Groups & Edit Data** tab and changing a team's points,
 goal difference, or goals scored updates the page live and is saved to
 that browser's `localStorage` (`bestThirds2026:editedTeams`), so it
 survives a reload on the same device. It is never sent anywhere — it's
-purely a local "what if" sandbox layered on top of the shipped snapshot.
+purely a local "what if" sandbox layered on top of whatever's currently
+loaded (live data if reachable, `TEAMS_RAW` otherwise).
 
-Saved edits are tagged with the `SNAPSHOT_VERSION` they were made
-against; if the deployed snapshot is later updated, stale local edits
-are automatically discarded in favor of the fresh data.
+Saved edits are tagged with the live feed's `lastUpdated` timestamp (or
+`SNAPSHOT_VERSION` if running on the static fallback) at the moment they
+were made. If newer live data — or a bumped `SNAPSHOT_VERSION` — shows up
+later, stale local edits are automatically discarded in favor of the
+fresh numbers rather than silently mixing old edits with new results.
 
 Click **"Reset to original snapshot"** in the Groups tab at any time to
 discard local edits and clear them from storage.
@@ -161,4 +234,21 @@ python3 -m http.server 8000
 # then open http://localhost:8000/index.html
 ```
 
-Any static file server works — there's nothing to build or compile.
+Any static file server works — there's nothing to build or compile. A
+plain file server is enough; `data/standings.json` just needs to be
+fetchable as a relative path, which `file://` won't allow but any
+`http://` server will.
+
+To exercise the importer locally instead of waiting for the schedule:
+
+```
+FOOTBALL_DATA_API_KEY=your_key_here node scripts/import-standings.mjs
+```
+
+## Forking / deploying your own copy
+
+Get a free API key at [football-data.org](https://www.football-data.org/client/register),
+then add it as a repo secret named `FOOTBALL_DATA_API_KEY`
+(`gh secret set FOOTBALL_DATA_API_KEY` or Settings → Secrets and
+variables → Actions on GitHub) so `.github/workflows/update-standings.yml`
+can use it. The key is never read by anything client-side.

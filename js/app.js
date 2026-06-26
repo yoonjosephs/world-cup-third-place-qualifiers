@@ -1,7 +1,40 @@
 const STORAGE_KEY = "bestThirds2026:editedTeams";
+const STANDINGS_URL = "data/standings.json";
 
 let teams = TEAMS_RAW.map(t=>({name:t[0],group:t[1],pts:t[2],gd:t[3],gf:t[4],conduct:t[5],fifa:t[6]}));
-const SNAPSHOT = JSON.parse(JSON.stringify(teams));
+let SNAPSHOT = JSON.parse(JSON.stringify(teams));
+
+// liveStatus describes where the *current* numbers (before any local edits)
+// came from, so the banner and the localStorage version key both reflect
+// reality instead of the hardcoded fallback constant.
+let liveStatus = { ok:false, lastUpdated:null, version:SNAPSHOT_VERSION };
+let usingSavedEdits = false;
+
+// Pulls data/standings.json (written by the GitHub Action in
+// scripts/import-standings.mjs) and overlays live points/GD/GF onto the
+// bundled TEAMS_RAW baseline. fairPlayScore and fifaRanking always come
+// from TEAMS_RAW — they're not part of the live feed (see README).
+// Falls back to the pure TEAMS_RAW snapshot on any failure: bad network,
+// 404, malformed JSON, or opening this file directly from disk (file://
+// fetches of relative JSON are blocked in most browsers).
+async function loadLiveStandings(){
+  try{
+    const res = await fetch(STANDINGS_URL, {cache:'no-store'});
+    if(!res.ok) return;
+    const data = await res.json();
+    if(!data || !Array.isArray(data.teams) || typeof data.lastUpdated !== 'string') return;
+    const byName = new Map(data.teams.map(t=>[t.name,t]));
+    if(byName.size !== teams.length) return; // shape mismatch — don't trust it
+    teams.forEach(t=>{
+      const live = byName.get(t.name);
+      if(!live) return;
+      if(!Number.isInteger(live.pts) || !Number.isInteger(live.gd) || !Number.isInteger(live.gf)) return;
+      t.pts = live.pts; t.gd = live.gd; t.gf = live.gf;
+    });
+    liveStatus = { ok:true, lastUpdated:data.lastUpdated, source:data.source||'live feed', version:data.lastUpdated };
+    SNAPSHOT = JSON.parse(JSON.stringify(teams));
+  }catch(e){ /* network error, CORS on file://, bad JSON — keep static fallback */ }
+}
 
 function loadSavedTeams(){
   let raw;
@@ -10,7 +43,7 @@ function loadSavedTeams(){
   if(!raw) return null;
   try{
     const payload = JSON.parse(raw);
-    if(payload.version !== SNAPSHOT_VERSION) return null;
+    if(payload.version !== liveStatus.version) return null;
     if(!Array.isArray(payload.teams) || payload.teams.length !== SNAPSHOT.length) return null;
     const names = new Set(SNAPSHOT.map(t=>t.name));
     if(!payload.teams.every(t=>names.has(t.name))) return null;
@@ -20,17 +53,13 @@ function loadSavedTeams(){
 
 function saveTeams(){
   try{
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({version:SNAPSHOT_VERSION, teams}));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({version:liveStatus.version, teams}));
   }catch(e){ /* storage disabled — edits just won't persist */ }
 }
 
 function clearSavedTeams(){
   try{ localStorage.removeItem(STORAGE_KEY); }catch(e){}
 }
-
-const saved = loadSavedTeams();
-if(saved) teams = JSON.parse(JSON.stringify(saved));
-let usingSavedEdits = !!saved;
 
 function byGroup(g){return teams.filter(t=>t.group===g);}
 function sortKey(a,b){
@@ -88,12 +117,21 @@ function render(){
   renderScenario();
 }
 
+function fmtTimestamp(iso){
+  try{
+    return new Date(iso).toLocaleString(undefined, {dateStyle:'medium', timeStyle:'short'});
+  }catch(e){ return iso; }
+}
+
 function renderSnapshotNote(){
   const editNote = usingSavedEdits
     ? ' <b>You have unsaved-to-server local edits loaded</b> from a previous visit on this device — use "Reset to original snapshot" in Groups &amp; Edit Data to clear them.'
     : '';
+  const dataLine = liveStatus.ok
+    ? `<b>Live —</b> points/goal difference/goals scored last updated ${fmtTimestamp(liveStatus.lastUpdated)} via ${liveStatus.source}. Fair-play score and FIFA ranking are fixed inputs (see README) and don't update live.`
+    : `<b>Live data unavailable —</b> showing the bundled fallback snapshot taken 25 Jun 2026 (group stage matchday 3). This page will use live standings automatically once they're reachable again.`;
   document.getElementById('snapshotNote').innerHTML =
-    `<b>Data note —</b> seeded from a snapshot taken 25 Jun 2026 (group stage matchday 3 still finishing for several groups). Edit any team in <b>Groups &amp; Edit Data</b> to bring it current or to test a scenario; edits are saved to this browser only.${editNote}`;
+    `${dataLine} Edit any team in <b>Groups &amp; Edit Data</b> to test a scenario; edits are saved to this browser only.${editNote}`;
 }
 
 function renderThirdTable(thirds){
@@ -300,6 +338,12 @@ document.getElementById('resetBtn').addEventListener('click', ()=>{
   render();
 });
 
-initTabs();
-populateSelect();
-render();
+(async function init(){
+  await loadLiveStandings();
+  const saved = loadSavedTeams();
+  if(saved){ teams = JSON.parse(JSON.stringify(saved)); usingSavedEdits = true; }
+
+  initTabs();
+  populateSelect();
+  render();
+})();

@@ -1,0 +1,342 @@
+{
+  "lastUpdated": "2026-06-26T01:26:12.596Z",
+  "source": "football-data.org",
+  "teams": [
+    {
+      "name": "Czechia",
+      "group": "A",
+      "pts": 1,
+      "gd": -4,
+      "gf": 2
+    },
+    {
+      "name": "Mexico",
+      "group": "A",
+      "pts": 9,
+      "gd": 6,
+      "gf": 6
+    },
+    {
+      "name": "South Africa",
+      "group": "A",
+      "pts": 4,
+      "gd": -1,
+      "gf": 2
+    },
+    {
+      "name": "South Korea",
+      "group": "A",
+      "pts": 3,
+      "gd": -1,
+      "gf": 2
+    },
+    {
+      "name": "Bosnia and Herzegovina",
+      "group": "B",
+      "pts": 4,
+      "gd": -1,
+      "gf": 5
+    },
+    {
+      "name": "Canada",
+      "group": "B",
+      "pts": 4,
+      "gd": 5,
+      "gf": 8
+    },
+    {
+      "name": "Qatar",
+      "group": "B",
+      "pts": 1,
+      "gd": -8,
+      "gf": 2
+    },
+    {
+      "name": "Switzerland",
+      "group": "B",
+      "pts": 7,
+      "gd": 4,
+      "gf": 7
+    },
+    {
+      "name": "Brazil",
+      "group": "C",
+      "pts": 7,
+      "gd": 6,
+      "gf": 7
+    },
+    {
+      "name": "Haiti",
+      "group": "C",
+      "pts": 0,
+      "gd": -6,
+      "gf": 2
+    },
+    {
+      "name": "Morocco",
+      "group": "C",
+      "pts": 7,
+      "gd": 3,
+      "gf": 6
+    },
+    {
+      "name": "Scotland",
+      "group": "C",
+      "pts": 3,
+      "gd": -3,
+      "gf": 1
+    },
+    {
+      "name": "Australia",
+      "group": "D",
+      "pts": 3,
+      "gd": 0,
+      "gf": 2
+    },
+    {
+      "name": "Paraguay",
+      "group": "D",
+      "pts": 3,
+      "gd": -2,
+      "gf": 2
+    },
+    {
+      "name": "Türkiye",
+      "group": "D",
+      "pts": 0,
+      "gd": -3,
+      "gf": 0
+    },
+    {
+      "name": "USA",
+      "group": "D",
+      "pts": 6,
+      "gd": 5,
+      "gf": 6
+    },
+    {
+      "name": "Curaçao",
+      "group": "E",
+      "pts": 1,
+      "gd": -8,
+      "gf": 1
+    },
+    {
+      "name": "Ecuador",
+      "group": "E",
+      "pts": 4,
+      "gd": 0,
+      "gf": 2
+    },
+    {
+      "name": "Germany",
+      "group": "E",
+      "pts": 6,
+      "gd": 6,
+      "gf": 10
+    },
+    {
+      "name": "Ivory Coast",
+      "group": "E",
+      "pts": 6,
+      "gd": 2,
+      "gf": 4
+    },
+    {
+      "name": "Japan",
+      "group": "F",
+      "pts": 5,
+      "gd": 4,
+      "gf": 7
+    },
+    {
+      "name": "Netherlands",
+      "group": "F",
+      "pts": 7,
+      "gd": 6,
+      "gf": 10
+    },
+    {
+      "name": "Sweden",
+      "group": "F",
+      "pts": 4,
+      "gd": 0,
+      "gf": 7
+    },
+    {
+      "name": "Tunisia",
+      "group": "F",
+      "pts": 0,
+      "gd": -10,
+      "gf": 2
+    },
+    {
+      "name": "Belgium",
+      "group": "G",
+      "pts": 2,
+      "gd": 0,
+      "gf": 1
+    },
+    {
+      "name": "Egypt",
+      "group": "G",
+      "pts": 4,
+      "gd": 2,
+      "gf": 4
+    },
+    {
+      "name": "Iran",
+      "group": "G",
+      "pts": 2,
+      "gd": 0,
+      "gf": 2
+    },
+    {
+      "name": "New Zealand",
+      "group": "G",
+      "pts": 1,
+      "gd": -2,
+      "gf": 3
+    },
+    {
+      "name": "Cape Verde",
+      "group": "H",
+      "pts": 2,
+      "gd": 0,
+      "gf": 2
+    },
+    {
+      "name": "Saudi Arabia",
+      "group": "H",
+      "pts": 1,
+      "gd": -4,
+      "gf": 1
+    },
+    {
+      "name": "Spain",
+      "group": "H",
+      "pts": 4,
+      "gd": 4,
+      "gf": 4
+    },
+    {
+      "name": "Uruguay",
+      "group": "H",
+      "pts": 2,
+      "gd": 0,
+      "gf": 3
+    },
+    {
+      "name": "France",
+      "group": "I",
+      "pts": 6,
+      "gd": 5,
+      "gf": 6
+    },
+    {
+      "name": "Iraq",
+      "group": "I",
+      "pts": 0,
+      "gd": -6,
+      "gf": 1
+    },
+    {
+      "name": "Norway",
+      "group": "I",
+      "pts": 6,
+      "gd": 4,
+      "gf": 7
+    },
+    {
+      "name": "Senegal",
+      "group": "I",
+      "pts": 0,
+      "gd": -3,
+      "gf": 3
+    },
+    {
+      "name": "Algeria",
+      "group": "J",
+      "pts": 3,
+      "gd": -2,
+      "gf": 2
+    },
+    {
+      "name": "Argentina",
+      "group": "J",
+      "pts": 6,
+      "gd": 5,
+      "gf": 5
+    },
+    {
+      "name": "Austria",
+      "group": "J",
+      "pts": 3,
+      "gd": 0,
+      "gf": 3
+    },
+    {
+      "name": "Jordan",
+      "group": "J",
+      "pts": 0,
+      "gd": -3,
+      "gf": 2
+    },
+    {
+      "name": "Colombia",
+      "group": "K",
+      "pts": 6,
+      "gd": 3,
+      "gf": 4
+    },
+    {
+      "name": "DR Congo",
+      "group": "K",
+      "pts": 1,
+      "gd": -1,
+      "gf": 1
+    },
+    {
+      "name": "Portugal",
+      "group": "K",
+      "pts": 4,
+      "gd": 5,
+      "gf": 6
+    },
+    {
+      "name": "Uzbekistan",
+      "group": "K",
+      "pts": 0,
+      "gd": -7,
+      "gf": 1
+    },
+    {
+      "name": "Croatia",
+      "group": "L",
+      "pts": 3,
+      "gd": -1,
+      "gf": 3
+    },
+    {
+      "name": "England",
+      "group": "L",
+      "pts": 4,
+      "gd": 2,
+      "gf": 4
+    },
+    {
+      "name": "Ghana",
+      "group": "L",
+      "pts": 4,
+      "gd": 1,
+      "gf": 1
+    },
+    {
+      "name": "Panama",
+      "group": "L",
+      "pts": 0,
+      "gd": -2,
+      "gf": 0
+    }
+  ]
+}

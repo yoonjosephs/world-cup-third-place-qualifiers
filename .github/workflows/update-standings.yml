@@ -1,0 +1,44 @@
+name: Update World Cup standings
+
+on:
+  schedule:
+    # Every 20 minutes. Group stage runs through 2026-06-27; this workflow
+    # is cheap to leave running after that too (it no-ops once standings
+    # stop changing — see "no change" branch in scripts/import-standings.mjs),
+    # but feel free to delete/disable this schedule once the bracket locks.
+    - cron: "*/20 * * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-standings
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Fetch + validate + write data/standings.json
+        env:
+          FOOTBALL_DATA_API_KEY: ${{ secrets.FOOTBALL_DATA_API_KEY }}
+        run: node scripts/import-standings.mjs
+
+      - name: Commit if changed
+        run: |
+          if git diff --quiet -- data/standings.json; then
+            echo "No change to commit."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/standings.json
+          git commit -m "Update standings snapshot [skip ci]"
+          git push
