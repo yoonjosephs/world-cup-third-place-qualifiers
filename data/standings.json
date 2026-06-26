@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2026-06-26T04:11:14.392Z",
+  "lastUpdated": "2026-06-26T06:20:50.798Z",
   "source": "football-data.org",
   "teams": [
     {
@@ -131,17 +131,17 @@
     {
       "name": "Türkiye",
       "group": "D",
-      "pts": 1,
-      "gd": -3,
-      "gf": 2,
+      "pts": 3,
+      "gd": -2,
+      "gf": 3,
       "played": 3,
       "live": false
     },
     {
       "name": "USA",
       "group": "D",
-      "pts": 7,
-      "gd": 5,
+      "pts": 6,
+      "gd": 4,
       "gf": 8,
       "played": 3,
       "live": false
