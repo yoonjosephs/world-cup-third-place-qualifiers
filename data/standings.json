@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2026-06-27T22:45:08.096Z",
+  "lastUpdated": "2026-06-27T23:43:57.997Z",
   "source": "football-data.org",
   "teams": [
     {
@@ -365,37 +365,37 @@
     {
       "name": "Colombia",
       "group": "K",
-      "pts": 6,
+      "pts": 7,
       "gd": 3,
       "gf": 4,
-      "played": 2,
+      "played": 3,
       "live": false
     },
     {
       "name": "DR Congo",
       "group": "K",
-      "pts": 1,
+      "pts": 2,
       "gd": -1,
       "gf": 1,
-      "played": 2,
+      "played": 3,
       "live": false
     },
     {
       "name": "Portugal",
       "group": "K",
-      "pts": 4,
+      "pts": 5,
       "gd": 5,
       "gf": 6,
-      "played": 2,
+      "played": 3,
       "live": false
     },
     {
       "name": "Uzbekistan",
       "group": "K",
-      "pts": 0,
+      "pts": 1,
       "gd": -7,
       "gf": 1,
-      "played": 2,
+      "played": 3,
       "live": false
     },
     {
@@ -403,9 +403,9 @@
       "group": "L",
       "pts": 6,
       "gd": 0,
-      "gf": 4,
+      "gf": 5,
       "played": 3,
-      "live": true
+      "live": false
     },
     {
       "name": "England",
@@ -414,16 +414,16 @@
       "gd": 4,
       "gf": 6,
       "played": 3,
-      "live": true
+      "live": false
     },
     {
       "name": "Ghana",
       "group": "L",
       "pts": 4,
       "gd": 0,
-      "gf": 1,
+      "gf": 2,
       "played": 3,
-      "live": true
+      "live": false
     },
     {
       "name": "Panama",
@@ -432,20 +432,10 @@
       "gd": -4,
       "gf": 0,
       "played": 3,
-      "live": true
+      "live": false
     }
   ],
   "pendingFixtures": [
-    {
-      "group": "K",
-      "home": "Colombia",
-      "away": "Portugal"
-    },
-    {
-      "group": "K",
-      "home": "DR Congo",
-      "away": "Uzbekistan"
-    },
     {
       "group": "J",
       "home": "Jordan",
