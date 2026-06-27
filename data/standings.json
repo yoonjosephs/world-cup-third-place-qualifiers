@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2026-06-27T22:08:25.067Z",
+  "lastUpdated": "2026-06-27T22:45:08.096Z",
   "source": "football-data.org",
   "teams": [
     {
@@ -410,9 +410,9 @@
     {
       "name": "England",
       "group": "L",
-      "pts": 5,
-      "gd": 2,
-      "gf": 4,
+      "pts": 7,
+      "gd": 4,
+      "gf": 6,
       "played": 3,
       "live": true
     },
@@ -428,8 +428,8 @@
     {
       "name": "Panama",
       "group": "L",
-      "pts": 1,
-      "gd": -2,
+      "pts": 0,
+      "gd": -4,
       "gf": 0,
       "played": 3,
       "live": true
