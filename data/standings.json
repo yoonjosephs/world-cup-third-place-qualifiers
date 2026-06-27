@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2026-06-27T02:07:44.898Z",
+  "lastUpdated": "2026-06-27T05:40:19.414Z",
   "source": "football-data.org",
   "teams": [
     {
@@ -221,37 +221,37 @@
     {
       "name": "Belgium",
       "group": "G",
-      "pts": 2,
-      "gd": 0,
-      "gf": 1,
-      "played": 2,
+      "pts": 5,
+      "gd": 4,
+      "gf": 6,
+      "played": 3,
       "live": false
     },
     {
       "name": "Egypt",
       "group": "G",
-      "pts": 4,
+      "pts": 5,
       "gd": 2,
-      "gf": 4,
-      "played": 2,
+      "gf": 5,
+      "played": 3,
       "live": false
     },
     {
       "name": "Iran",
       "group": "G",
-      "pts": 2,
+      "pts": 3,
       "gd": 0,
-      "gf": 2,
-      "played": 2,
+      "gf": 3,
+      "played": 3,
       "live": false
     },
     {
       "name": "New Zealand",
       "group": "G",
       "pts": 1,
-      "gd": -2,
-      "gf": 3,
-      "played": 2,
+      "gd": -6,
+      "gf": 4,
+      "played": 3,
       "live": false
     },
     {
