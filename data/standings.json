@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2026-06-27T05:40:19.414Z",
+  "lastUpdated": "2026-06-27T13:46:44.593Z",
   "source": "football-data.org",
   "teams": [
     {
@@ -433,6 +433,38 @@
       "gf": 0,
       "played": 2,
       "live": false
+    }
+  ],
+  "pendingFixtures": [
+    {
+      "group": "L",
+      "home": "Panama",
+      "away": "England"
+    },
+    {
+      "group": "L",
+      "home": "Croatia",
+      "away": "Ghana"
+    },
+    {
+      "group": "K",
+      "home": "Colombia",
+      "away": "Portugal"
+    },
+    {
+      "group": "K",
+      "home": "DR Congo",
+      "away": "Uzbekistan"
+    },
+    {
+      "group": "J",
+      "home": "Jordan",
+      "away": "Argentina"
+    },
+    {
+      "group": "J",
+      "home": "Algeria",
+      "away": "Austria"
     }
   ]
 }
