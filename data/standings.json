@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2026-06-27T21:45:29.689Z",
+  "lastUpdated": "2026-06-27T22:08:25.067Z",
   "source": "football-data.org",
   "teams": [
     {
@@ -401,11 +401,11 @@
     {
       "name": "Croatia",
       "group": "L",
-      "pts": 4,
-      "gd": -1,
-      "gf": 3,
+      "pts": 6,
+      "gd": 0,
+      "gf": 4,
       "played": 3,
-      "live": false
+      "live": true
     },
     {
       "name": "England",
@@ -419,11 +419,11 @@
     {
       "name": "Ghana",
       "group": "L",
-      "pts": 5,
-      "gd": 1,
+      "pts": 4,
+      "gd": 0,
       "gf": 1,
       "played": 3,
-      "live": false
+      "live": true
     },
     {
       "name": "Panama",
