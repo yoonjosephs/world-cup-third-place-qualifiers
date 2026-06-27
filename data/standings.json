@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2026-06-27T13:46:44.593Z",
+  "lastUpdated": "2026-06-27T21:45:29.689Z",
   "source": "football-data.org",
   "teams": [
     {
@@ -401,51 +401,41 @@
     {
       "name": "Croatia",
       "group": "L",
-      "pts": 3,
+      "pts": 4,
       "gd": -1,
       "gf": 3,
-      "played": 2,
+      "played": 3,
       "live": false
     },
     {
       "name": "England",
       "group": "L",
-      "pts": 4,
+      "pts": 5,
       "gd": 2,
       "gf": 4,
-      "played": 2,
-      "live": false
+      "played": 3,
+      "live": true
     },
     {
       "name": "Ghana",
       "group": "L",
-      "pts": 4,
+      "pts": 5,
       "gd": 1,
       "gf": 1,
-      "played": 2,
+      "played": 3,
       "live": false
     },
     {
       "name": "Panama",
       "group": "L",
-      "pts": 0,
+      "pts": 1,
       "gd": -2,
       "gf": 0,
-      "played": 2,
-      "live": false
+      "played": 3,
+      "live": true
     }
   ],
   "pendingFixtures": [
-    {
-      "group": "L",
-      "home": "Panama",
-      "away": "England"
-    },
-    {
-      "group": "L",
-      "home": "Croatia",
-      "away": "Ghana"
-    },
     {
       "group": "K",
       "home": "Colombia",
