@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2026-06-27T01:01:20.289Z",
+  "lastUpdated": "2026-06-27T02:07:44.898Z",
   "source": "football-data.org",
   "teams": [
     {
@@ -261,7 +261,7 @@
       "gd": 0,
       "gf": 2,
       "played": 3,
-      "live": true
+      "live": false
     },
     {
       "name": "Saudi Arabia",
@@ -270,7 +270,7 @@
       "gd": -4,
       "gf": 1,
       "played": 3,
-      "live": true
+      "live": false
     },
     {
       "name": "Spain",
@@ -279,7 +279,7 @@
       "gd": 5,
       "gf": 5,
       "played": 3,
-      "live": true
+      "live": false
     },
     {
       "name": "Uruguay",
@@ -288,7 +288,7 @@
       "gd": -1,
       "gf": 3,
       "played": 3,
-      "live": true
+      "live": false
     },
     {
       "name": "France",
