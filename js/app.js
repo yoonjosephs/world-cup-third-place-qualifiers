@@ -9,6 +9,8 @@ let SNAPSHOT = JSON.parse(JSON.stringify(teams));
 // reality instead of the hardcoded fallback constant.
 let liveStatus = { ok:false, lastUpdated:null, version:SNAPSHOT_VERSION };
 let usingSavedEdits = false;
+let pendingFixtures = []; // remaining (not-yet-started) group-stage fixtures, from data/standings.json
+let scenarioEngine = null; // built once after load — see buildScenarioEngine()
 
 // Pulls data/standings.json (written by the GitHub Action in
 // scripts/import-standings.mjs) and overlays live points/GD/GF onto the
@@ -46,6 +48,11 @@ async function loadLiveStandings(){
     });
     liveStatus = { ok:true, lastUpdated:data.lastUpdated, source:data.source||'live feed', version:data.lastUpdated };
     SNAPSHOT = JSON.parse(JSON.stringify(teams));
+    if(Array.isArray(data.pendingFixtures) && data.pendingFixtures.every(f=>
+      f && typeof f.group==='string' && typeof f.home==='string' && typeof f.away==='string'
+    )){
+      pendingFixtures = data.pendingFixtures;
+    }
   }catch(e){ /* network error, CORS on file://, bad JSON — keep static fallback */ }
 }
 
@@ -172,6 +179,123 @@ function resolveBracket(){
 }
 
 const GROUP_LETTERS = ['A','B','C','D','E','F','G','H','I','J','K','L'];
+
+// Brute-force "what results let team X advance" engine, built once per
+// data load from data/standings.json's `pendingFixtures` (the actual
+// remaining group-stage matches, fetched by scripts/import-standings.mjs).
+// Caps at 3^MAX_SCENARIO_FIXTURES combinations so it can never hang a
+// visitor's browser if a future snapshot has an unexpectedly large number
+// of games left (e.g. computed earlier in the group stage).
+const MAX_SCENARIO_FIXTURES = 10; // 3^10 = 59,049 combinations
+
+// Within one pending group's 4 teams (all "variable" — final score
+// unknown), or within the cross-group third-place pool (a mix of
+// "fixed" teams whose group already finished, frozen forever, and
+// "variable" contenders still pending), compute each entry's best- and
+// worst-case final rank. A "fixed" entry's order against another "fixed"
+// entry is the real, permanent FIFA tiebreak result (sortKey); any
+// comparison touching a "variable" entry can only use points, since an
+// unfinished team's eventual GD/goals aren't bounded.
+function scenarioPts(entry){ return entry.kind==='fixed' ? entry.team.pts : entry.pts; }
+function scenarioRankRanges(entries){
+  const isAbove=(a,b)=>{
+    if(a.kind==='fixed' && b.kind==='fixed') return sortKey(a.team, b.team) < 0;
+    return scenarioPts(a) > scenarioPts(b);
+  };
+  const isTied=(a,b)=>{
+    if(a.kind==='fixed' && b.kind==='fixed') return sortKey(a.team, b.team) === 0;
+    return scenarioPts(a) === scenarioPts(b);
+  };
+  return entries.map(e=>{
+    let above=0, tied=0;
+    entries.forEach(o=>{
+      if(o===e) return;
+      if(isAbove(o,e)) above++;
+      else if(isTied(o,e)) tied++;
+    });
+    return {name:e.name, bestCaseRank:above+1, worstCaseRank:above+tied+1};
+  });
+}
+
+// Builds the engine from the current `teams` state (call once per data
+// load, before any Groups-tab "what if" edits — see comment at call site).
+// Returns null if there's nothing to compute (no pending fixtures) or the
+// safety cap is exceeded.
+function buildScenarioEngine(){
+  if(!Array.isArray(pendingFixtures) || pendingFixtures.length===0) return null;
+  if(pendingFixtures.length > MAX_SCENARIO_FIXTURES) return null;
+
+  const pendingGroups = [...new Set(pendingFixtures.map(f=>f.group))];
+  const baseByName = new Map(teams.map(t=>[t.name,t]));
+  function ptsAfter(name, combo){
+    let pts = baseByName.get(name).pts;
+    pendingFixtures.forEach((fx,i)=>{
+      if(fx.home===name) pts += combo[i]==='H'?3:combo[i]==='D'?1:0;
+      if(fx.away===name) pts += combo[i]==='A'?3:combo[i]==='D'?1:0;
+    });
+    return pts;
+  }
+
+  const decidedThirds = GROUP_LETTERS.filter(g=>!pendingGroups.includes(g))
+    .map(g=>byGroup(g).find(t=>t.pos===3)).filter(Boolean);
+
+  const OUTCOMES = ['H','D','A'];
+  const N = pendingFixtures.length;
+  const total = Math.pow(3, N);
+  const perTeam = new Map(); // name -> {QUALIFIED,ELIMINATED,AMBIGUOUS}
+  const perTeamPerFixture = new Map(); // name -> [ {H:{...},D:{...},A:{...}}, ... ] indexed like pendingFixtures
+  function bump(name, bucket, combo){
+    const a = perTeam.get(name) || {QUALIFIED:0,ELIMINATED:0,AMBIGUOUS:0};
+    a[bucket]++; perTeam.set(name, a);
+    let perFx = perTeamPerFixture.get(name);
+    if(!perFx){ perFx = pendingFixtures.map(()=>({H:{QUALIFIED:0,ELIMINATED:0,AMBIGUOUS:0},D:{QUALIFIED:0,ELIMINATED:0,AMBIGUOUS:0},A:{QUALIFIED:0,ELIMINATED:0,AMBIGUOUS:0}})); perTeamPerFixture.set(name, perFx); }
+    combo.forEach((outcome,i)=>{ perFx[i][outcome][bucket]++; });
+  }
+
+  for(let i=0;i<total;i++){
+    const combo = []; let x = i;
+    for(let j=0;j<N;j++){ combo.push(OUTCOMES[x%3]); x = Math.floor(x/3); }
+
+    const verdict = new Map();
+    const contenders = [];
+    pendingGroups.forEach(g=>{
+      const names = byGroup(g).map(t=>t.name);
+      const entries = names.map(name=>({name, kind:'variable', pts: ptsAfter(name, combo)}));
+      scenarioRankRanges(entries).forEach(r=>{
+        if(r.worstCaseRank<=2) verdict.set(r.name, 'QUALIFIED');
+        else if(r.bestCaseRank>=4 && r.worstCaseRank>=4) verdict.set(r.name, 'ELIMINATED');
+        else if(r.bestCaseRank===3 && r.worstCaseRank===3) contenders.push({name:r.name, pts: entries.find(e=>e.name===r.name).pts});
+        else verdict.set(r.name, 'AMBIGUOUS'); // own group slot itself undetermined without the actual scoreline
+      });
+    });
+
+    const poolEntries = decidedThirds.map(t=>({name:t.name, kind:'fixed', team:t}))
+      .concat(contenders.map(c=>({name:c.name, kind:'variable', pts:c.pts})));
+    scenarioRankRanges(poolEntries).forEach(r=>{
+      if(verdict.has(r.name)) return;
+      if(r.worstCaseRank<=8) verdict.set(r.name, 'QUALIFIED');
+      else if(r.bestCaseRank>8) verdict.set(r.name, 'ELIMINATED');
+      else verdict.set(r.name, 'AMBIGUOUS');
+    });
+
+    verdict.forEach((bucket,name)=>bump(name, bucket, combo));
+  }
+
+  return { fixtures: pendingFixtures, total, perTeam, perTeamPerFixture };
+}
+
+// Per-team summary for buildScenarioText(), or null if this team isn't
+// affected by any pending fixture (already fully decided, or the engine
+// wasn't built at all).
+function scenarioSummaryForTeam(name){
+  if(!scenarioEngine || !scenarioEngine.perTeam.has(name)) return null;
+  const overall = scenarioEngine.perTeam.get(name);
+  const perFixture = scenarioEngine.fixtures.map((fx,i)=>({
+    group: fx.group, home: fx.home, away: fx.away,
+    outcomes: scenarioEngine.perTeamPerFixture.get(name)[i],
+  }));
+  return { total: scenarioEngine.total, overall, perFixture };
+}
 
 function fmtGD(n){return (n>0?'+':'')+n;}
 function fmtConduct(n){return (n>0?'+':'')+n;}
@@ -321,6 +445,31 @@ function renderBracket(){
   el.innerHTML = html;
 }
 
+function fmtPct(n, total){ return total ? Math.round(100*n/total)+'%' : '0%'; }
+
+// Renders scenarioSummaryForTeam()'s output as the "specific results from
+// upcoming matches" breakdown: an overall qualify/eliminated/undetermined
+// split across every modeled result combination, plus a per-fixture table
+// showing how each individual remaining match's outcome shifts the odds.
+// Returns '' if this team isn't affected by any pending fixture.
+function scenarioBreakdownHtml(name){
+  const s = scenarioSummaryForTeam(name);
+  if(!s) return '';
+  const { total, overall, perFixture } = s;
+  const headline = `Across all ${total.toLocaleString()} modeled result combinations for the remaining group-stage games: <b>${name} qualifies in ${overall.QUALIFIED}</b> (${fmtPct(overall.QUALIFIED,total)}), <b>is eliminated in ${overall.ELIMINATED}</b> (${fmtPct(overall.ELIMINATED,total)}), and in the remaining <b>${overall.AMBIGUOUS}</b> (${fmtPct(overall.AMBIGUOUS,total)}) it comes down to the actual scoreline — not just win/draw/loss — which this can't predict.`;
+  const rows = perFixture.map(fx=>{
+    const h = fx.outcomes.H, d = fx.outcomes.D, a = fx.outcomes.A;
+    const hT = h.QUALIFIED+h.ELIMINATED+h.AMBIGUOUS, dT = d.QUALIFIED+d.ELIMINATED+d.AMBIGUOUS, aT = a.QUALIFIED+a.ELIMINATED+a.AMBIGUOUS;
+    return `<div class="fixture-row">
+      <b>${fx.home} vs ${fx.away}</b> <span class="fixture-group">Group ${fx.group}</span><br>
+      If <b>${fx.home}</b> win: ${name} qualifies in ${fmtPct(h.QUALIFIED,hT)} of those scenarios &middot;
+      if it's a draw: ${fmtPct(d.QUALIFIED,dT)} &middot;
+      if <b>${fx.away}</b> win: ${fmtPct(a.QUALIFIED,aT)}
+    </div>`;
+  }).join('');
+  return `<div class="scenario-breakdown">${headline}<div class="fixture-rows">${rows}</div></div>`;
+}
+
 function buildScenarioText(name){
   const t = teams.find(x=>x.name===name);
   if(!t) return '';
@@ -351,14 +500,14 @@ function buildScenarioText(name){
       : t.played>=GROUP_STAGE_GAMES ? ` Group ${g} has finished all ${GROUP_STAGE_GAMES} games, so this is locked in.`
       : ` Group ${g} still has games left (${t.name} has played ${t.played} of ${GROUP_STAGE_GAMES}), so this could still change.`;
     return `<div class="scenario-head"><span class="badge safe">Through</span><b>${t.name}</b></div>
-      ${t.name} has ${posWord} and is into the Round of 32. They play <b>${oppHtml||'TBD'}</b> on ${dateVenue||'a date to be confirmed'}.${groupDoneNote}`;
+      ${t.name} has ${posWord} and is into the Round of 32. They play <b>${oppHtml||'TBD'}</b> on ${dateVenue||'a date to be confirmed'}.${groupDoneNote}${scenarioBreakdownHtml(t.name)}`;
   }
   if(t.pos===4){
     const groupDoneNote = t.live ? ` ${t.name} is playing right now — this is provisional until that match finishes.`
       : t.played>=GROUP_STAGE_GAMES ? ` Group ${g} has finished all ${GROUP_STAGE_GAMES} games, so this is final.`
       : ` ${t.name} has played ${t.played} of ${GROUP_STAGE_GAMES} group games — this is provisional until Group ${g} finishes.`;
     return `<div class="scenario-head"><span class="badge out">Eliminated</span><b>${t.name}</b></div>
-      ${t.name} finished fourth in Group ${g} on the current numbers and cannot reach the Round of 32 from there.${groupDoneNote}`;
+      ${t.name} finished fourth in Group ${g} on the current numbers and cannot reach the Round of 32 from there.${groupDoneNote}${scenarioBreakdownHtml(t.name)}`;
   }
   // pos 3
   const thirds = thirdPlaceTable();
@@ -388,7 +537,7 @@ function buildScenarioText(name){
     : label==='ELIMINATED' ? '<span class="badge out">Eliminated</span>'
     : mine.qualified ? '<span class="badge safe">In a qualifying spot</span>' : '<span class="badge bubble">On the bubble</span>';
   const playedText = `${t.name} has played ${mine.played} of ${GROUP_STAGE_GAMES} group games`;
-  let certaintyText = '';
+  let certaintyText = '', breakdown = '';
   if(mine.live){
     certaintyText = ` ${t.name} is playing right now, so even their current points/GD/GF could still change before full time — they can't be called clinched or eliminated mid-match.`;
   } else if(label==='CLINCHED'){
@@ -397,11 +546,13 @@ function buildScenarioText(name){
     certaintyText = ` Even with a maximum run of wins in their remaining games (best case: ${mine.maxPts} points), 8 other third-placed teams are already permanently ahead of that — either on points alone, or tied with it and already locked in ahead on goal difference with both sides' group stages finished. ${t.name} can no longer reach the top 8. They're mathematically eliminated from best-thirds qualification.`;
   } else if(mine.played>=GROUP_STAGE_GAMES){
     certaintyText = ` ${t.name}'s own numbers are final — Group ${g} is finished, so their points/GD/GF can't change. What's still open is the field around them: other third-placed teams haven't all finished, so the cutoff itself isn't settled yet. A currently-tied rival could still pull ahead on points by winning its last game, or — much less likely — fall behind ${t.name} on goal difference with a big enough loss while staying tied on points (a draw never moves goal difference; only a loss can move a tied team's GD down). Either way, it's the field's results left to play, not ${t.name}'s.`;
+    breakdown = scenarioBreakdownHtml(t.name);
   } else {
     certaintyText = ` Their group stage isn't fully decided yet — ${t.name}'s own remaining games and enough of the field around them are both still open, so this could still move either way.`;
+    breakdown = scenarioBreakdownHtml(t.name);
   }
   return `<div class="scenario-head">${badge}<b>${t.name}</b><span style="color:var(--text-faint);font-size:12px;">Rank ${mine.rank} of 12 third-place teams</span></div>
-    ${t.name} is currently <b>${mine.qualified?'#'+mine.rank+' — inside the top 8':'#'+mine.rank+' — outside the top 8'}</b> third-placed teams (${mine.pts} pts, ${fmtGD(mine.gd)} GD, ${mine.gf} GF). ${playedText}.${certaintyText} ${gapText} The order is set by points, then goal difference, then goals scored, then fair-play score, then FIFA ranking — try editing ${t.name}'s numbers in the Groups tab to see exactly what flips their position.${oppText}`;
+    ${t.name} is currently <b>${mine.qualified?'#'+mine.rank+' — inside the top 8':'#'+mine.rank+' — outside the top 8'}</b> third-placed teams (${mine.pts} pts, ${fmtGD(mine.gd)} GD, ${mine.gf} GF). ${playedText}.${certaintyText} ${gapText} The order is set by points, then goal difference, then goals scored, then fair-play score, then FIFA ranking — try editing ${t.name}'s numbers in the Groups tab to see exactly what flips their position.${oppText}${breakdown}`;
 }
 
 function renderScenario(){
@@ -453,6 +604,12 @@ document.getElementById('resetBtn').addEventListener('click', ()=>{
 
 (async function init(){
   await loadLiveStandings();
+  // Build the scenario engine off the live/fallback baseline, before any
+  // Groups-tab "what if" edits are applied — it answers "what do the real
+  // remaining fixtures mean," not "what if you change these numbers."
+  computeGroupPositions();
+  scenarioEngine = buildScenarioEngine();
+
   const saved = loadSavedTeams();
   if(saved){ teams = JSON.parse(JSON.stringify(saved)); usingSavedEdits = true; }
 

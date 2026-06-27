@@ -17,8 +17,20 @@ const STANDINGS_URL = "https://api.football-data.org/v4/competitions/WC/standing
 // treating that team's current line as locked in. See README "Live data
 // pipeline" / "In-progress matches".
 const LIVE_MATCHES_URL = "https://api.football-data.org/v4/competitions/WC/matches?status=LIVE";
+// Remaining (not-yet-started) group-stage fixtures, used by the "what
+// result combinations let team X advance" scenario engine in js/app.js.
+// `status=SCHEDULED` is football-data.org's alias covering both SCHEDULED
+// and TIMED (confirmed kickoff, not started) -- same convenience-alias
+// pattern as `status=LIVE` covering IN_PLAY+PAUSED.
+const PENDING_FIXTURES_URL = "https://api.football-data.org/v4/competitions/WC/matches?stage=GROUP_STAGE&status=SCHEDULED";
 const OUT_PATH = new URL("../data/standings.json", import.meta.url);
 const API_KEY = process.env.FOOTBALL_DATA_API_KEY;
+// Safety cutoff: the scenario engine brute-forces 3^N combinations for N
+// remaining matches. 3^12 ~= 531k is still fine for a browser; comfortably
+// above what group stage ever has left in practice (at most a handful of
+// groups x 2 matches). If this ever gets exceeded, the importer just omits
+// pendingFixtures and the app falls back to its non-scenario explanation.
+const MAX_PENDING_FIXTURES = 12;
 
 function summarize(lines) {
   console.log(lines.join("\n"));
@@ -46,6 +58,35 @@ function extractLiveTeamIds(matchesPayload) {
     }
   }
   return ids;
+}
+
+// Returns { fixtures, errors }. fixtures is only meaningful if errors is empty.
+// Each fixture: { group, home, away } using our canonical team names.
+function validatePendingFixtures(matchesPayload) {
+  const errors = [];
+  const fixtures = [];
+  const matches = matchesPayload?.matches || [];
+
+  if (matches.length > MAX_PENDING_FIXTURES) {
+    errors.push(`${matches.length} pending group-stage fixtures exceeds the safety cutoff of ${MAX_PENDING_FIXTURES} -- skipping pendingFixtures this run (scenario engine would be too expensive to brute-force).`);
+    return { fixtures, errors };
+  }
+
+  for (const m of matches) {
+    const groupLetter = (m.group || "").replace(/^GROUP_/, "").trim();
+    const home = TEAM_ID_MAP[m.homeTeam?.id];
+    const away = TEAM_ID_MAP[m.awayTeam?.id];
+    if (!home || !away) {
+      errors.push(`Pending fixture has unmatched team id(s): home=${m.homeTeam?.id} (${m.homeTeam?.name}), away=${m.awayTeam?.id} (${m.awayTeam?.name})`);
+      continue;
+    }
+    if (home.group !== groupLetter || away.group !== groupLetter || home.group !== away.group) {
+      errors.push(`Pending fixture group mismatch: ${home.name} (Group ${home.group}) vs ${away.name} (Group ${away.group}), API says Group ${groupLetter}`);
+      continue;
+    }
+    fixtures.push({ group: groupLetter, home: home.name, away: away.name });
+  }
+  return { fixtures, errors };
 }
 
 // Returns { records, errors }. records is only meaningful if errors is empty.
@@ -112,11 +153,12 @@ async function main() {
     return;
   }
 
-  let payload, liveTeamIds;
+  let payload, liveTeamIds, fixturesPayload;
   try {
     payload = await fetchJSON(STANDINGS_URL);
     const matchesPayload = await fetchJSON(LIVE_MATCHES_URL);
     liveTeamIds = extractLiveTeamIds(matchesPayload);
+    fixturesPayload = await fetchJSON(PENDING_FIXTURES_URL);
   } catch (e) {
     await summarize([`⚠️ Fetch failed: ${e.message}`, "Keeping existing data/standings.json."]);
     return;
@@ -128,21 +170,29 @@ async function main() {
     return;
   }
 
+  const { fixtures, errors: fixtureErrors } = validatePendingFixtures(fixturesPayload);
+  if (fixtureErrors.length) {
+    await summarize(["⚠️ Pending-fixtures checks failed — publishing standings without scenario data this run:", ...fixtureErrors.map(e => `  - ${e}`)]);
+  }
+
   const out = {
     lastUpdated: new Date().toISOString(),
     source: "football-data.org",
     teams: records,
+    pendingFixtures: fixtureErrors.length ? [] : fixtures,
   };
 
   const previous = await readFile(OUT_PATH, "utf8").catch(() => null);
-  const previousTeams = previous ? JSON.stringify(JSON.parse(previous).teams) : null;
-  if (previousTeams === JSON.stringify(records)) {
-    await summarize([`✅ Fetched OK, no change in standings since last run (checked at ${out.lastUpdated}).`]);
+  const previousPayload = previous ? JSON.parse(previous) : null;
+  const previousComparable = previousPayload ? JSON.stringify({ teams: previousPayload.teams, pendingFixtures: previousPayload.pendingFixtures || [] }) : null;
+  const nextComparable = JSON.stringify({ teams: out.teams, pendingFixtures: out.pendingFixtures });
+  if (previousComparable === nextComparable) {
+    await summarize([`✅ Fetched OK, no change in standings or fixtures since last run (checked at ${out.lastUpdated}).`]);
     return; // don't touch lastUpdated / commit if nothing actually changed
   }
 
   await writeFile(OUT_PATH, JSON.stringify(out, null, 2) + "\n", "utf8");
-  await summarize([`✅ Published updated standings (${records.length} teams) at ${out.lastUpdated}.`]);
+  await summarize([`✅ Published updated standings (${records.length} teams, ${out.pendingFixtures.length} pending fixtures) at ${out.lastUpdated}.`]);
 }
 
 main().catch(async (e) => {

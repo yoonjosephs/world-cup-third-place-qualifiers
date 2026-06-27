@@ -24,11 +24,11 @@ score and FIFA ranking are fixed inputs that don't change live.
 index.html                          Markup + tab/panel structure
 css/styles.css                       All styling
 js/data.js                           Bundled fallback dataset + the Annex C lookup table + its decoder
-js/app.js                            State, tiebreaker logic, rendering, live-data fetch, localStorage persistence
-data/standings.json                  Live points/GD/GF/gamesPlayed, written by the GitHub Action — fetched by js/app.js at page load
+js/app.js                            State, tiebreaker logic, scenario engine, rendering, live-data fetch, localStorage persistence
+data/standings.json                  Live points/GD/GF/gamesPlayed + pending fixtures, written by the GitHub Action — fetched by js/app.js at page load
 scripts/team-id-map.mjs              Explicit football-data.org team-id -> {name, group} alias map
 scripts/import-standings.mjs         Fetches, validates, and writes data/standings.json
-.github/workflows/update-standings.yml   Schedules the importer every 20 minutes
+.github/workflows/update-standings.yml   Schedules the importer (see "Live data pipeline" for the real-world cadence caveats)
 ```
 
 ## Data model
@@ -114,6 +114,70 @@ Everything that isn't conclusively clinched or eliminated shows as a
 provisional **IN**/**OUT** that "could still move either way." The
 Third-Place Race table and the per-team scenario text both reflect this:
 **CLINCHED**/**ELIMINATED** vs. plain **IN**/**OUT**.
+
+### Scenario engine — "what results does X need?"
+
+For a team that's neither clinched nor eliminated, the scenario text goes
+a level deeper than the simple certainty check above: it brute-forces
+every plausible result of the *actual remaining group-stage fixtures*
+and reports exactly how many lead to qualifying, how many to elimination,
+and how many still come down to the scoreline. This is what answers "for
+Korea to advance, the results of the upcoming matches need to be..." —
+concretely, not just "still possible."
+
+**Where the fixtures come from.** `scripts/import-standings.mjs` also
+fetches `GET /v4/competitions/WC/matches?stage=GROUP_STAGE&status=SCHEDULED`
+(football-data.org's alias covering both `SCHEDULED` and `TIMED`, i.e.
+not-yet-started matches) and publishes them as `pendingFixtures` in
+`data/standings.json` — `[{group, home, away}, ...]` using our canonical
+team names via the same `TEAM_ID_MAP` alias map used everywhere else, with
+the same fail-closed validation (group mismatches or unmatched ids drop
+that run's fixtures rather than publish something wrong).
+
+**The brute force, in `js/app.js`:**
+
+1. `buildScenarioEngine()` collects every group with at least one pending
+   fixture, and enumerates all `3^N` win/draw/loss combinations for the
+   `N` remaining matches (capped at `MAX_SCENARIO_FIXTURES = 10`, i.e.
+   59,049 combinations — comfortably fast for a one-time computation, and
+   far above what group stage ever realistically has left at once; if a
+   future snapshot somehow exceeds it, the engine just doesn't build and
+   every team falls back to the plain certainty text above).
+2. For each combination, every pending group's 4 teams get a **best-case**
+   and **worst-case final rank** within their own group, computed by
+   `scenarioRankRanges()` — points-only, since an unfinished team's GD
+   isn't bounded. A team whose rank range sits entirely in 1st/2nd is a
+   definite automatic qualifier for that combination; entirely 4th is a
+   definite elimination; exactly pinned at 3rd enters the cross-group
+   third-place pool; anything straddling a boundary (e.g. could be 2nd or
+   3rd) is genuinely undetermined by win/draw/loss alone — resolving it
+   would require the actual scoreline, which isn't modeled.
+3. The pool of third-place contenders (the pending groups' clean 3rd-place
+   finishers) plus the 9 already-decided groups' 3rd-place teams (treated
+   as **fixed** — their order against each other is the real, permanent
+   `sortKey()` result, not a points-only guess) get the same best/worst-
+   case-rank treatment against the global top-8 cutoff.
+4. Across all combinations, each team accumulates a `QUALIFIED` /
+   `ELIMINATED` / `AMBIGUOUS` tally — and, per remaining fixture, the same
+   tally conditioned on each of that match's three possible outcomes, which
+   is what produces lines like "if Algeria win: qualifies in 100% of those
+   scenarios."
+
+**Why "fixed" vs. "variable" matters here** is the same lesson as the
+clinch/eliminate fix above, applied generally: comparing two *already-
+decided* teams uses their real tiebreak result, never a coincidental
+points match; comparing anything involving a still-pending team is
+points-only, since that's all that's actually known. Getting this
+distinction wrong silently produces nonsense (an earlier draft of this
+engine treated a decided team's points field as `undefined` in mixed
+comparisons, which made every contender look harmless — caught by
+manually verifying the output against hand-computed cases before shipping).
+
+**What this deliberately doesn't do:** predict actual scorelines, weight
+outcomes by how likely a win/draw/loss is, or handle more than
+`MAX_SCENARIO_FIXTURES` remaining matches. It's an exhaustive enumeration
+of result *types*, not a forecast — every win/draw/loss combination is
+treated as equally worth reporting, not equally likely.
 
 ### `TABLE_COMPACT` (FIFA Annex C lookup table)
 
@@ -225,9 +289,12 @@ live" below). The pipeline:
    and why.)
 5. If everything checks out and the standings actually changed, it writes
    `data/standings.json` (`{lastUpdated, source, teams: [{name, group,
-   pts, gd, gf, played, live}, ...]}`) and the workflow commits it
-   directly to `main`. `live` (see "In-progress matches" below) flags a
-   team currently mid-match.
+   pts, gd, gf, played, live}, ...], pendingFixtures: [{group, home,
+   away}, ...]}`) and the workflow commits it directly to `main`. `live`
+   (see "In-progress matches" below) flags a team currently mid-match;
+   `pendingFixtures` feeds the scenario engine (see "Scenario engine"
+   above) and is independently validated — a bad fixtures fetch publishes
+   the standings without it rather than blocking the whole update.
 6. **`js/app.js`** fetches `data/standings.json` at page load
    (`loadLiveStandings()`), overlays `pts`/`gd`/`gf`/`played`/`live` onto
    the `TEAMS_RAW` baseline by name, and records `lastUpdated`/`source` for

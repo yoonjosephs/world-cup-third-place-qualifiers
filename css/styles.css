@@ -149,6 +149,14 @@ select.team-select{
 .badge.out{background:var(--red-bg);color:var(--red);}
 .scenario b{color:var(--text);}
 .scenario .opp{font-family:var(--mono);color:var(--blue);}
+.scenario-breakdown{margin-top:12px;padding-top:12px;border-top:1px dashed var(--line-soft);}
+.fixture-rows{margin-top:10px;display:flex;flex-direction:column;gap:8px;}
+.fixture-row{
+  background:var(--surface3);border:1px solid var(--line);border-radius:7px;
+  padding:8px 10px;font-size:13px;line-height:1.5;
+}
+.fixture-row b{color:var(--text);}
+.fixture-group{font-family:var(--mono);font-size:10.5px;color:var(--text-faint);text-transform:uppercase;}
 
 /* ---------- Third place table / CUT LINE ---------- */
 .panel-title{
