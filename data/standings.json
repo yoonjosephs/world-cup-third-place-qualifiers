@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2026-06-26T21:41:19.259Z",
+  "lastUpdated": "2026-06-27T01:01:20.289Z",
   "source": "football-data.org",
   "teams": [
     {
@@ -257,38 +257,38 @@
     {
       "name": "Cape Verde",
       "group": "H",
-      "pts": 2,
+      "pts": 3,
       "gd": 0,
       "gf": 2,
-      "played": 2,
-      "live": false
+      "played": 3,
+      "live": true
     },
     {
       "name": "Saudi Arabia",
       "group": "H",
-      "pts": 1,
+      "pts": 2,
       "gd": -4,
       "gf": 1,
-      "played": 2,
-      "live": false
+      "played": 3,
+      "live": true
     },
     {
       "name": "Spain",
       "group": "H",
-      "pts": 4,
-      "gd": 4,
-      "gf": 4,
-      "played": 2,
-      "live": false
+      "pts": 7,
+      "gd": 5,
+      "gf": 5,
+      "played": 3,
+      "live": true
     },
     {
       "name": "Uruguay",
       "group": "H",
       "pts": 2,
-      "gd": 0,
+      "gd": -1,
       "gf": 3,
-      "played": 2,
-      "live": false
+      "played": 3,
+      "live": true
     },
     {
       "name": "France",
