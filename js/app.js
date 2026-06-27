@@ -98,14 +98,8 @@ function thirdPlaceTable(){
 // Mathematical certainty for the third-place race. For each third-place
 // team, maxPts is the most points they could possibly finish with — their
 // current points plus a win in every game they haven't played yet.
-//
-// eliminated: true if 8 or more of the other thirds already have *more*
-// points than this team's maxPts — meaning even a perfect run through
-// their remaining games can't get them into the top 8 by points alone.
-// (Points-only is deliberate: a trailing team's eventual GD/goals/fair-play/
-// FIFA rank can't be bounded the way a 3-points-per-win ceiling can — a
-// team could theoretically win 12–0 — so this only fires when points alone
-// make the outcome unavoidable.)
+// isDecided is true once a team's own line can no longer change: group
+// finished and not mid-match (maxPts === pts at that point).
 //
 // clinched: true if at most 7 of the other thirds can still end up ranked
 // at or above this team. A challenger only counts as "still a threat" if:
@@ -119,6 +113,20 @@ function thirdPlaceTable(){
 // tied on points but behind on goal difference) is *not* a threat — that
 // tie is decided forever, not a future possibility, so it doesn't count
 // against clinching.
+//
+// eliminated: true if 8 or more of the other thirds are *permanently*
+// ahead of this team — either strictly more points than this team's
+// maxPts (a perfect run still wouldn't be enough), or tied with this
+// team's maxPts where BOTH teams are fully decided and the rival wins the
+// real tiebreak chain. That second case only applies when this team is
+// also decided: a trailing team that still has games left could yet
+// raise its own points past a tied-and-currently-ahead-on-GD rival, so a
+// tiebreak win only counts as permanent once neither side can move
+// anymore. (GD/goals/fair-play/FIFA rank still aren't used to bound a
+// still-active rival's *ceiling* — a team could theoretically win 12–0 —
+// only to resolve a tie where both sides are already finished.)
+function isDecided(team){ return !team.live && team.played >= GROUP_STAGE_GAMES; }
+
 function couldStillOutrank(challenger, target){
   if(challenger.played < GROUP_STAGE_GAMES || challenger.live){
     const theirMaxPts = challenger.pts + (GROUP_STAGE_GAMES - challenger.played)*3;
@@ -127,12 +135,20 @@ function couldStillOutrank(challenger, target){
   return sortKey(challenger, target) <= 0; // challenger's frozen line sorts at-or-above target's current line
 }
 
+function isPermanentlyAhead(challenger, target){
+  if(challenger.pts > target.maxPts) return true;
+  if(challenger.pts === target.maxPts && isDecided(challenger) && isDecided(target)){
+    return sortKey(challenger, target) < 0; // both frozen — tiebreak result is final, not a future possibility
+  }
+  return false;
+}
+
 function computeThirdPlaceCertainty(thirds){
   thirds.forEach(t=>{ t.maxPts = t.pts + (GROUP_STAGE_GAMES - t.played)*3; });
   thirds.forEach(t=>{
     const others = thirds.filter(o=>o.name!==t.name);
     const stillThreats = others.filter(o=>couldStillOutrank(o, t)).length;
-    const alreadyAhead = others.filter(o=>o.pts > t.maxPts).length;
+    const alreadyAhead = others.filter(o=>isPermanentlyAhead(o, t)).length;
     t.clinched = stillThreats <= 7;
     t.eliminated = alreadyAhead >= 8;
   });
@@ -378,7 +394,7 @@ function buildScenarioText(name){
   } else if(label==='CLINCHED'){
     certaintyText = ` Even if every other team behind them in the third-place race wins all of its remaining games, at most 7 of them could reach ${mine.pts} points — so ${t.name} can't be pushed below 8th by points alone. Their spot is mathematically clinched.`;
   } else if(label==='ELIMINATED'){
-    certaintyText = ` Even with a maximum run of wins in their remaining games (best case: ${mine.maxPts} points), at least 8 other third-placed teams already have more points than that — so ${t.name} can no longer reach the top 8. They're mathematically eliminated from best-thirds qualification.`;
+    certaintyText = ` Even with a maximum run of wins in their remaining games (best case: ${mine.maxPts} points), 8 other third-placed teams are already permanently ahead of that — either on points alone, or tied with it and already locked in ahead on goal difference with both sides' group stages finished. ${t.name} can no longer reach the top 8. They're mathematically eliminated from best-thirds qualification.`;
   } else {
     certaintyText = ` Their group stage isn't fully decided yet — neither ${t.name}'s spot nor enough of the field around them is locked in, so this could still move either way.`;
   }

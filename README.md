@@ -70,13 +70,26 @@ gets a `clinched`/`eliminated` flag from `computeThirdPlaceCertainty()`
 in `js/app.js`:
 
 - **`maxPts`** = current points + 3 × remaining games — the most points a
-  team could possibly finish group play with. Used only for `eliminated`:
-  a team is eliminated if 8+ of the other thirds *already* have more
-  points than this team's `maxPts` — i.e. even a perfect run through the
-  remaining games can't get them into the top 8 on points alone. This is
-  points-only on purpose: a trailing team's eventual GD/goals/fair-play/
-  FIFA rank can't be bounded the way a 3-points-per-win ceiling can (a
-  team could theoretically win 12–0).
+  team could possibly finish group play with.
+- **`eliminated`**: true if 8+ of the other thirds are *permanently* ahead
+  of this team — via `isPermanentlyAhead()`. A rival counts only if:
+  - it has **strictly more points** than this team's `maxPts` (a perfect
+    run still wouldn't be enough — points-only here on purpose, since a
+    trailing team's eventual GD/goals/fair-play/FIFA rank can't be
+    bounded the way a 3-points-per-win ceiling can), or
+  - it's **tied** with this team's `maxPts` and **both teams are fully
+    decided** (groups finished, no live match) — only then is the real
+    tiebreak chain final on both sides, so a rival that already wins it
+    is a permanent block, not a future possibility. If *this* team still
+    has games left, a tied-and-currently-ahead-on-GD rival doesn't count
+    yet: this team could still raise its own points past them.
+    (Example: Scotland sits 9th on 3 points with their group finished.
+    Only 4 thirds have strictly more points — but Senegal and South Korea
+    are also tied at 3 with their groups finished too, and both already
+    beat Scotland on goal difference. That's 6 permanent blockers, not 4
+    — still short of 8, so Scotland isn't eliminated yet, but it's closer
+    than points alone would suggest, and would cross the line if two more
+    currently-unfinished rivals at 3 points end up finishing above it.)
 - **`clinched`**: true if at most 7 of the other thirds could still end up
   ranked at or above this team — via `couldStillOutrank()`. A challenger
   only counts as a real threat if:
