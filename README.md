@@ -1,5 +1,16 @@
 # Best Thirds — 2026 World Cup Round of 32 Calculator
 
+**Status: Completed.** The group stage finished on 2026-06-28 and the
+best third-placed field is now permanent. Final qualifiers (in
+third-place rank order): **DR Congo, Sweden, Ghana, Ecuador, Bosnia and
+Herzegovina, Algeria, Paraguay, Senegal.** Eliminated from the
+third-place race: Iran, South Korea, Scotland, Uruguay. The live site
+reflects this with a "FINAL" banner and every team's status now reads
+**CLINCHED**/**ELIMINATED**, never a provisional IN/OUT. The data
+pipeline (`.github/workflows/update-standings.yml`) is left in place for
+reference and historical accuracy but won't be triggered again — there's
+nothing left for it to update.
+
 A static, no-build, client-side calculator for the 2026 FIFA World Cup's
 "best third-placed team" qualification race. It shows:
 
@@ -251,6 +262,12 @@ calculator will leave such teams in whatever order they appear in
 numeric fields. The app's own UI flags this in the Groups tab.
 
 ## Live data pipeline
+
+> The group stage is over (see "Status" at the top) — this section
+> describes how the pipeline worked while it was live. The workflow still
+> exists and still runs correctly if triggered, it's just retired: there
+> are no more results to fetch, `pendingFixtures` will always come back
+> empty, and every team is already permanently clinched or eliminated.
 
 Points, goal difference, and goals scored update when the importer runs —
 fair-play score and FIFA ranking don't (see "Why fair-play and FIFA

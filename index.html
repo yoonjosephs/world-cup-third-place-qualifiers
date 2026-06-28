@@ -14,9 +14,9 @@
 <div class="wrap">
 
   <header>
-    <p class="eyebrow">Round of 32 Qualification</p>
+    <p class="eyebrow" id="eyebrow">Round of 32 Qualification</p>
     <h1 class="title">Best <em>Thirds</em></h1>
-    <p class="subtitle">A live calculator for the 2026 World Cup's best third-placed teams — who's through, who's on the bubble, and exactly who each team meets in the Round of 32, straight from FIFA's own tiebreaker rules and the official 495-combination bracket table.</p>
+    <p class="subtitle" id="subtitle">A live calculator for the 2026 World Cup's best third-placed teams — who's through, who's on the bubble, and exactly who each team meets in the Round of 32, straight from FIFA's own tiebreaker rules and the official 495-combination bracket table.</p>
     <div class="snapshot-note" id="snapshotNote" aria-live="polite"></div>
   </header>
 
@@ -37,8 +37,8 @@
     </div>
 
     <div id="view-third" role="tabpanel" aria-labelledby="tab-third">
-      <h2 class="panel-title">The Third-Place Table</h2>
-      <p class="panel-desc">All 12 teams currently sitting third in their group, ranked by FIFA's tiebreakers: points → goal difference → goals scored → fair-play score → FIFA ranking. The top 8 advance. Once enough other groups have finished their 3 games, a team's spot can become mathematically <b>clinched</b> or <b>eliminated</b> on points alone — until then it shows as provisionally IN or OUT.</p>
+      <h2 class="panel-title" id="thirdPanelTitle">The Third-Place Table</h2>
+      <p class="panel-desc" id="thirdPanelDesc">All 12 teams currently sitting third in their group, ranked by FIFA's tiebreakers: points → goal difference → goals scored → fair-play score → FIFA ranking. The top 8 advance. Once enough other groups have finished their 3 games, a team's spot can become mathematically <b>clinched</b> or <b>eliminated</b> on points alone — until then it shows as provisionally IN or OUT.</p>
       <div class="thead-row" aria-hidden="true">
         <span>#</span><span>Team</span><span class="r">Pts</span><span class="r">GD</span><span class="r">GF</span><span class="r">Cards</span><span class="r">Status</span>
       </div>
@@ -58,7 +58,7 @@
     </div>
 
     <div id="view-bracket" role="tabpanel" aria-labelledby="tab-bracket" hidden>
-      <h2 class="panel-title">Round of 32 — if the group stage ended right now</h2>
+      <h2 class="panel-title" id="bracketPanelTitle">Round of 32 — if the group stage ended right now</h2>
       <p class="panel-desc">8 of the 12 group winners face a best third-placed team; the other 4 face a runner-up. Which third-place team lands where depends on <i>which 8 groups</i> supply a qualifying third-place finisher — FIFA fixed all 495 combinations in Annex C of the regulations, and that exact table drives the matchups below.</p>
       <div class="bracket-list" id="bracketList"></div>
     </div>

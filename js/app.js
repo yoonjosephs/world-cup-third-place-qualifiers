@@ -325,15 +325,48 @@ function fmtTimestamp(iso){
   }catch(e){ return iso; }
 }
 
+// True once every team's group stage is over and nothing is mid-match —
+// at that point the third-place field, the bracket, and every clinch/
+// eliminate verdict are all permanent. Drives the "FINAL" framing instead
+// of the "Live" one.
+function isGroupStageComplete(){
+  return pendingFixtures.length===0 && teams.every(t=>!t.live && t.played>=GROUP_STAGE_GAMES);
+}
+
 function renderSnapshotNote(){
   const editNote = usingSavedEdits
     ? ' <b>You have unsaved-to-server local edits loaded</b> from a previous visit on this device — use "Reset to original snapshot" in Groups &amp; Edit Data to clear them.'
     : '';
-  const dataLine = liveStatus.ok
-    ? `<b>Live —</b> points/goal difference/goals scored last updated ${fmtTimestamp(liveStatus.lastUpdated)} via ${liveStatus.source}. Fair-play score and FIFA ranking are fixed inputs (see README) and don't update live.`
-    : `<b>Live data unavailable —</b> showing the bundled fallback snapshot taken 25 Jun 2026 (group stage matchday 3). This page will use live standings automatically once they're reachable again.`;
+  const complete = liveStatus.ok && isGroupStageComplete();
+  let dataLine;
+  if(complete){
+    dataLine = `<b>FINAL —</b> the group stage is complete (confirmed ${fmtTimestamp(liveStatus.lastUpdated)} via ${liveStatus.source}). Every group, the third-place field, and the Round of 32 bracket below are now permanent — nothing on this page will change again.`;
+  } else if(liveStatus.ok){
+    dataLine = `<b>Live —</b> points/goal difference/goals scored last updated ${fmtTimestamp(liveStatus.lastUpdated)} via ${liveStatus.source}. Fair-play score and FIFA ranking are fixed inputs (see README) and don't update live.`;
+  } else {
+    dataLine = `<b>Live data unavailable —</b> showing the bundled fallback snapshot taken 25 Jun 2026 (group stage matchday 3). This page will use live standings automatically once they're reachable again.`;
+  }
   document.getElementById('snapshotNote').innerHTML =
-    `${dataLine} Edit any team in <b>Groups &amp; Edit Data</b> to test a scenario; edits are saved to this browser only.${editNote}`;
+    `${dataLine} Edit any team in <b>Groups &amp; Edit Data</b> to test a hypothetical; edits are saved to this browser only.${editNote}`;
+
+  const eyebrow = document.getElementById('eyebrow');
+  const subtitle = document.getElementById('subtitle');
+  const thirdPanelTitle = document.getElementById('thirdPanelTitle');
+  const thirdPanelDesc = document.getElementById('thirdPanelDesc');
+  const bracketPanelTitle = document.getElementById('bracketPanelTitle');
+  if(complete){
+    eyebrow.textContent = 'Round of 32 Qualification — Final';
+    subtitle.textContent = "The 2026 World Cup group stage is complete. Here's the final best third-placed teams field, exactly who each team meets in the Round of 32, and the FIFA tiebreaker math behind every call.";
+    thirdPanelTitle.textContent = 'The Final Third-Place Table';
+    thirdPanelDesc.innerHTML = "All 12 teams that finished third in their group, ranked by FIFA's tiebreakers: points → goal difference → goals scored → fair-play score → FIFA ranking. The top 8 advanced. Every team below is now permanently <b>CLINCHED</b> or <b>ELIMINATED</b> — the group stage is over.";
+    bracketPanelTitle.textContent = 'Round of 32 — Final Bracket';
+  } else {
+    eyebrow.textContent = 'Round of 32 Qualification';
+    subtitle.textContent = "A live calculator for the 2026 World Cup's best third-placed teams — who's through, who's on the bubble, and exactly who each team meets in the Round of 32, straight from FIFA's own tiebreaker rules and the official 495-combination bracket table.";
+    thirdPanelTitle.textContent = 'The Third-Place Table';
+    thirdPanelDesc.innerHTML = "All 12 teams currently sitting third in their group, ranked by FIFA's tiebreakers: points → goal difference → goals scored → fair-play score → FIFA ranking. The top 8 advance. Once enough other groups have finished their 3 games, a team's spot can become mathematically <b>clinched</b> or <b>eliminated</b> on points alone — until then it shows as provisionally IN or OUT.";
+    bracketPanelTitle.textContent = 'Round of 32 — if the group stage ended right now';
+  }
 }
 
 function thirdStatusLabel(t){
@@ -430,8 +463,8 @@ function renderBracket(){
       const thirdGroup = assign ? assign[m.a] : null;
       const thirdTeam = thirdGroup ? thirdOf(thirdGroup) : null;
       rightName = thirdTeam ? thirdTeam.name : `Best 3rd · Group ${POOLS[m.a].join('/')}`;
-      rightSrc = thirdTeam ? `3rd place · Group ${thirdGroup} (current)` : `Pool: Group ${POOLS[m.a].join('/')}`;
-      rightProv = true;
+      rightSrc = thirdTeam ? `3rd place · Group ${thirdGroup}${isGroupStageComplete()?'':' (current)'}` : `Pool: Group ${POOLS[m.a].join('/')}`;
+      rightProv = !isGroupStageComplete();
     }
     html += `<div class="match-card">
       <div class="match-meta"><b>${m.id}</b>${m.date}<br>${m.venue}</div>
@@ -512,13 +545,14 @@ function buildScenarioText(name){
   // pos 3
   const thirds = thirdPlaceTable();
   const mine = thirds.find(x=>x.name===t.name);
+  const final = isGroupStageComplete();
   let gapText='';
   if(mine.qualified){
     const cushion = thirds[8];
-    gapText = cushion ? `They sit ${mine.pts-cushion.pts>=0? (mine.pts-cushion.pts)+' pt(s) and ' : ''}${mine.gd-cushion.gd} goal(s) of difference above 9th-placed ${cushion.name} on the bubble below them.` : '';
+    gapText = cushion ? `They ${final?'finished':'sit'} ${mine.pts-cushion.pts>=0? (mine.pts-cushion.pts)+' pt(s) and ' : ''}${mine.gd-cushion.gd} goal(s) of difference above 9th-placed ${cushion.name}${final?'.':' on the bubble below them.'}` : '';
   } else {
     const line = thirds[7];
-    gapText = line ? `They're ${line.pts-mine.pts} point(s) (and ${line.gd-mine.gd} on goal difference) behind 8th-placed ${line.name}, the team currently holding the last qualifying spot.` : '';
+    gapText = line ? `They ${final?'finished':"'re"} ${line.pts-mine.pts} point(s) (and ${line.gd-mine.gd} on goal difference) behind 8th-placed ${line.name}, the team that ${final?'took':'currently holds'} the last qualifying spot.` : '';
   }
   const {assign} = resolveBracket();
   let oppText = '';
@@ -529,7 +563,7 @@ function buildScenarioText(name){
     if(oppSlot){
       const w = winnerOf(oppSlot);
       const m = MATCHES.find(mm=>mm.type==='W-3RD' && mm.a===oppSlot);
-      oppText = `<br>If the table finished right now, they'd play <b>${w?w.name:'Group '+oppSlot+' winner'}</b> in the Round of 32 (${m?m.date+' · '+m.venue:''}).`;
+      oppText = `<br>${isGroupStageComplete()?'They':"If the table finished right now, they'd"} play <b>${w?w.name:'Group '+oppSlot+' winner'}</b> in the Round of 32 (${m?m.date+' · '+m.venue:''}).`;
     }
   }
   const label = thirdStatusLabel(mine);
@@ -541,9 +575,13 @@ function buildScenarioText(name){
   if(mine.live){
     certaintyText = ` ${t.name} is playing right now, so even their current points/GD/GF could still change before full time — they can't be called clinched or eliminated mid-match.`;
   } else if(label==='CLINCHED'){
-    certaintyText = ` Even if every other team behind them in the third-place race wins all of its remaining games, at most 7 of them could reach ${mine.pts} points — so ${t.name} can't be pushed below 8th by points alone. Their spot is mathematically clinched.`;
+    certaintyText = final
+      ? ` At most 7 other third-placed teams finished with ${mine.pts} points or more — so ${t.name} couldn't have been pushed below 8th by points alone. Their spot is mathematically clinched.`
+      : ` Even if every other team behind them in the third-place race wins all of its remaining games, at most 7 of them could reach ${mine.pts} points — so ${t.name} can't be pushed below 8th by points alone. Their spot is mathematically clinched.`;
   } else if(label==='ELIMINATED'){
-    certaintyText = ` Even with a maximum run of wins in their remaining games (best case: ${mine.maxPts} points), 8 other third-placed teams are already permanently ahead of that — either on points alone, or tied with it and already locked in ahead on goal difference with both sides' group stages finished. ${t.name} can no longer reach the top 8. They're mathematically eliminated from best-thirds qualification.`;
+    certaintyText = final
+      ? ` ${t.name} finished with ${mine.pts} points, their final total — and 8 other third-placed teams already finished permanently ahead of that, either on points alone or tied with it and ahead on goal difference. ${t.name} couldn't reach the top 8. They're mathematically eliminated from best-thirds qualification.`
+      : ` Even with a maximum run of wins in their remaining games (best case: ${mine.maxPts} points), 8 other third-placed teams are already permanently ahead of that — either on points alone, or tied with it and already locked in ahead on goal difference with both sides' group stages finished. ${t.name} can no longer reach the top 8. They're mathematically eliminated from best-thirds qualification.`;
   } else if(mine.played>=GROUP_STAGE_GAMES){
     certaintyText = ` ${t.name}'s own numbers are final — Group ${g} is finished, so their points/GD/GF can't change. What's still open is the field around them: other third-placed teams haven't all finished, so the cutoff itself isn't settled yet. A currently-tied rival could still pull ahead on points by winning its last game, or — much less likely — fall behind ${t.name} on goal difference with a big enough loss while staying tied on points (a draw never moves goal difference; only a loss can move a tied team's GD down). Either way, it's the field's results left to play, not ${t.name}'s.`;
     breakdown = scenarioBreakdownHtml(t.name);
@@ -551,8 +589,9 @@ function buildScenarioText(name){
     certaintyText = ` Their group stage isn't fully decided yet — ${t.name}'s own remaining games and enough of the field around them are both still open, so this could still move either way.`;
     breakdown = scenarioBreakdownHtml(t.name);
   }
+  const standingVerb = final ? 'finished' : 'is currently';
   return `<div class="scenario-head">${badge}<b>${t.name}</b><span style="color:var(--text-faint);font-size:12px;">Rank ${mine.rank} of 12 third-place teams</span></div>
-    ${t.name} is currently <b>${mine.qualified?'#'+mine.rank+' — inside the top 8':'#'+mine.rank+' — outside the top 8'}</b> third-placed teams (${mine.pts} pts, ${fmtGD(mine.gd)} GD, ${mine.gf} GF). ${playedText}.${certaintyText} ${gapText} The order is set by points, then goal difference, then goals scored, then fair-play score, then FIFA ranking — try editing ${t.name}'s numbers in the Groups tab to see exactly what flips their position.${oppText}${breakdown}`;
+    ${t.name} ${standingVerb} <b>${mine.qualified?'#'+mine.rank+' — inside the top 8':'#'+mine.rank+' — outside the top 8'}</b> third-placed teams (${mine.pts} pts, ${fmtGD(mine.gd)} GD, ${mine.gf} GF). ${playedText}.${certaintyText} ${gapText} The order is set by points, then goal difference, then goals scored, then fair-play score, then FIFA ranking — try editing ${t.name}'s numbers in the Groups tab to see exactly what flips their position.${oppText}${breakdown}`;
 }
 
 function renderScenario(){
