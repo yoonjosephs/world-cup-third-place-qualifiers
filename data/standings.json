@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2026-06-28T01:40:10.292Z",
+  "lastUpdated": "2026-06-28T13:22:36.907Z",
   "source": "football-data.org",
   "teams": [
     {
@@ -329,37 +329,37 @@
     {
       "name": "Algeria",
       "group": "J",
-      "pts": 3,
+      "pts": 4,
       "gd": -2,
-      "gf": 2,
-      "played": 2,
+      "gf": 5,
+      "played": 3,
       "live": false
     },
     {
       "name": "Argentina",
       "group": "J",
-      "pts": 6,
-      "gd": 5,
-      "gf": 5,
-      "played": 2,
+      "pts": 9,
+      "gd": 7,
+      "gf": 8,
+      "played": 3,
       "live": false
     },
     {
       "name": "Austria",
       "group": "J",
-      "pts": 3,
+      "pts": 4,
       "gd": 0,
-      "gf": 3,
-      "played": 2,
+      "gf": 6,
+      "played": 3,
       "live": false
     },
     {
       "name": "Jordan",
       "group": "J",
       "pts": 0,
-      "gd": -3,
-      "gf": 2,
-      "played": 2,
+      "gd": -5,
+      "gf": 3,
+      "played": 3,
       "live": false
     },
     {
@@ -435,16 +435,5 @@
       "live": false
     }
   ],
-  "pendingFixtures": [
-    {
-      "group": "J",
-      "home": "Jordan",
-      "away": "Argentina"
-    },
-    {
-      "group": "J",
-      "home": "Algeria",
-      "away": "Austria"
-    }
-  ]
+  "pendingFixtures": []
 }
