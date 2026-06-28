@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2026-06-27T23:43:57.997Z",
+  "lastUpdated": "2026-06-28T00:38:46.352Z",
   "source": "football-data.org",
   "teams": [
     {
@@ -369,16 +369,16 @@
       "gd": 3,
       "gf": 4,
       "played": 3,
-      "live": false
+      "live": true
     },
     {
       "name": "DR Congo",
       "group": "K",
-      "pts": 2,
-      "gd": -1,
+      "pts": 1,
+      "gd": -2,
       "gf": 1,
       "played": 3,
-      "live": false
+      "live": true
     },
     {
       "name": "Portugal",
@@ -387,16 +387,16 @@
       "gd": 5,
       "gf": 6,
       "played": 3,
-      "live": false
+      "live": true
     },
     {
       "name": "Uzbekistan",
       "group": "K",
-      "pts": 1,
-      "gd": -7,
-      "gf": 1,
+      "pts": 3,
+      "gd": -6,
+      "gf": 2,
       "played": 3,
-      "live": false
+      "live": true
     },
     {
       "name": "Croatia",
