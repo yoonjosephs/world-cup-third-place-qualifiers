@@ -14,8 +14,8 @@ A static, no-build, client-side calculator for the 2026 FIFA World Cup's
 
 It's plain HTML/CSS/JS — no build step, no backend, no framework. Open
 `index.html` directly or serve the folder with any static file server.
-Points, goal difference, and goals scored are kept current automatically
-by a scheduled GitHub Action (see "Live data pipeline" below); fair-play
+Points, goal difference, and goals scored are kept current by a GitHub
+Action triggered on demand (see "Live data pipeline" below); fair-play
 score and FIFA ranking are fixed inputs that don't change live.
 
 ## Files
@@ -28,7 +28,7 @@ js/app.js                            State, tiebreaker logic, scenario engine, r
 data/standings.json                  Live points/GD/GF/gamesPlayed + pending fixtures, written by the GitHub Action — fetched by js/app.js at page load
 scripts/team-id-map.mjs              Explicit football-data.org team-id -> {name, group} alias map
 scripts/import-standings.mjs         Fetches, validates, and writes data/standings.json
-.github/workflows/update-standings.yml   Schedules the importer (see "Live data pipeline" for the real-world cadence caveats)
+.github/workflows/update-standings.yml   Runs the importer — manual trigger only, no schedule (see "Live data pipeline")
 ```
 
 ## Data model
@@ -252,21 +252,24 @@ numeric fields. The app's own UI flags this in the Groups tab.
 
 ## Live data pipeline
 
-Points, goal difference, and goals scored update automatically — fair-play
-score and FIFA ranking don't (see "Why fair-play and FIFA ranking aren't
-live" below). The pipeline:
+Points, goal difference, and goals scored update when the importer runs —
+fair-play score and FIFA ranking don't (see "Why fair-play and FIFA
+ranking aren't live" below). The pipeline:
 
 1. **`.github/workflows/update-standings.yml`** runs `scripts/import-standings.mjs`
-   on a `*/5 * * * *` cron (plus manual `workflow_dispatch`). In practice,
-   GitHub's free scheduler doesn't guarantee that cadence — expect a long
-   (multi-hour) delay before the first run ever fires, and gaps of hours
-   between runs after that under platform load, not a steady 5 minutes.
-   This is a GitHub-side limitation, not a bug in the workflow; the
-   snapshot-note banner always shows the real `lastUpdated` time so the
-   page never claims to be fresher than it is. If you need reliable
-   timing, trigger it manually from the Actions tab ("Run workflow") or
-   point an external scheduler (e.g. cron-job.org) at the GitHub API's
-   `workflow_dispatch` endpoint.
+   on **`workflow_dispatch` only — no schedule.** Trigger it manually from
+   the Actions tab ("Run workflow") or `gh workflow run
+   update-standings.yml`. This was a `*/5 * * * *` cron at one point, but
+   GitHub's free scheduler didn't honor it reliably in practice — hours-
+   long cold starts before the first run ever fired, then multi-hour gaps
+   between runs under platform load, never close to every 5 minutes. A
+   manual/on-demand trigger is at least as predictable and doesn't burn
+   scheduler contention for nothing. The snapshot-note banner always shows
+   the real `lastUpdated` time regardless, so the page never claims to be
+   fresher than it is. If you want a steady cadence back, point an
+   external scheduler (e.g. cron-job.org) at the GitHub API's
+   `workflow_dispatch` endpoint — that's a real cron you control, not
+   GitHub's contended one.
 2. The script calls football-data.org's `GET /v4/competitions/WC/standings`
    using an API key read from the `FOOTBALL_DATA_API_KEY` repo secret (sent
    as the `X-Auth-Token` header) — **the key never appears in client-side
@@ -356,11 +359,13 @@ editor.
 
 - Trigger it manually: **Actions → Update World Cup standings → Run workflow**
   on GitHub, or locally with `FOOTBALL_DATA_API_KEY=... node scripts/import-standings.mjs`.
-- Change the polling cadence by editing the `cron` line in
-  `.github/workflows/update-standings.yml`. Once the bracket locks
-  (group stage ends, all 8 best-thirds are fixed), this workflow has
-  nothing left to usefully update — disable the schedule or delete the
-  file rather than letting it poll an unchanging table forever.
+- There's no schedule to adjust — it's `workflow_dispatch`-only by design
+  (see "Live data pipeline" above). To get a recurring cadence, point an
+  external scheduler at the `workflow_dispatch` API endpoint instead of
+  re-adding a GitHub Actions `schedule` trigger.
+- Once the bracket locks (group stage ends, all 8 best-thirds are fixed),
+  this workflow has nothing left to usefully update — there's nothing to
+  disable since it's already on-demand only, just stop triggering it.
 - If football-data.org ever changes a team's `id` (shouldn't happen) or
   you swap providers, update `scripts/team-id-map.mjs` — that's the only
   place name/id matching logic lives.
@@ -409,7 +414,7 @@ plain file server is enough; `data/standings.json` just needs to be
 fetchable as a relative path, which `file://` won't allow but any
 `http://` server will.
 
-To exercise the importer locally instead of waiting for the schedule:
+To exercise the importer locally instead of triggering it on GitHub:
 
 ```
 FOOTBALL_DATA_API_KEY=your_key_here node scripts/import-standings.mjs
